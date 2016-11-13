@@ -64,7 +64,7 @@ public interface ForwardServer extends Runnable {
      *
      * @param value the allowable chunk size
      * @return this builder
-     * @throws IllegalArgumentException when the size <= 0
+     * @throws IllegalArgumentException when the size is less than or equal to 0
      */
     public Builder chunkSizeLimit(final long value) {
       if (value <= 0) {
@@ -80,7 +80,7 @@ public interface ForwardServer extends Runnable {
      * @param value the maximum number of pending connections
      *              when 0 is given, the default value of JDK is used
      * @return this builder
-     * @throws IllegalArgumentException when the size < 0
+     * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder backlog(final int value) {
       if (value < 0) {
@@ -96,7 +96,7 @@ public interface ForwardServer extends Runnable {
      * @param value the size of socket send buffers
      *              when 0 is given, the default value is used
      * @return this builder
-     * @throws IllegalArgumentException when the size < 0
+     * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder sendBufferSize(final int value) {
       if (value < 0) {
@@ -112,7 +112,7 @@ public interface ForwardServer extends Runnable {
      * @param value the size of socket receive buffers
      *              when 0 is given, the default value is used
      * @return this builder
-     * @throws IllegalArgumentException when the size < 0
+     * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder receiveBufferSize(final int value) {
       if (value < 0) {

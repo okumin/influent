@@ -14,7 +14,7 @@ import influent.EventStream;
 public interface ForwardCallback {
   /**
    * Creates the {@code ForwardCallback}.
-   * {@see the document of ForwardCallback#consume}
+   * See also ForwardCallback#consume.
    *
    * @param consumer the callback function
    * @return the {@code ForwardCallback}
