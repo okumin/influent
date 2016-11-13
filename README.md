@@ -18,7 +18,21 @@ Influent does not support these features now.
 * handshake phase
 * CompressedPackedForward mode
 
-## How to use
+## Usage
+
+### Dependency
+
+#### Maven
+
+```
+<dependency>
+    <groupId>com.okumin</groupId>
+    <artifactId>influent-java</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+### How to use
 
 Give `ForwardServer` the callback function that receives `EventStream`.
 If you want to write `EventStreams` to stdout,
