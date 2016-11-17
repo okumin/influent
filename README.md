@@ -18,6 +18,22 @@ Influent does not support these features now.
 * handshake phase
 * CompressedPackedForward mode
 
+## Advantages over Fluentd
+
+There are some reasons why Influent is developed.
+
+### Java integration
+
+Influent enables users to handle Fluentd's events by Java.
+This means that they can use directly their domain logic written in Java or Java client APIs for some middleware.
+
+### High performance
+
+JVM has high performance and Java has good thread API and IO API.
+Influent makes it possible to upgrade performance for some applications.
+
+Note: no stress test against Influent has not yet been performed.
+
 ## Usage
 
 ### Dependency
