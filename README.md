@@ -13,10 +13,8 @@ This is the protocol for Fluentd's forward plugin.
 
 Influent is a server implementation, so behaves as like `in_forward`.
 
-Influent does not support these features now.
-
-* handshake phase
-* CompressedPackedForward mode
+There are some features that Influent does not support now.
+See also the `TODO` section.
 
 ## Advantages over Fluentd
 
@@ -33,6 +31,13 @@ JVM has high performance and Java has good thread API and IO API.
 Influent makes it possible to upgrade performance for some applications.
 
 Note: no stress test against Influent has not yet been performed.
+
+## TODO
+
+* handshake phase implementation
+* CompressedPackedForward mode implementation
+* load test and performance improvement
+* Scala API
 
 ## Usage
 
