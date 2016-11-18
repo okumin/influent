@@ -19,7 +19,7 @@ import influent.internal.util.Exceptions;
 /**
  * A non-blocking mode {@code DatagramChannel}.
  */
-public final class NioUdpChannel {
+public final class NioUdpChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
   private final SocketAddress localAddress;
@@ -125,6 +125,7 @@ public final class NioUdpChannel {
   /**
    * Closes the {@code DatagramChannel}.
    */
+  @Override
   public void close() {
     Exceptions.ignore(channel::close,
         "An IO error occurred when closing DatagramChannel. local address = " + getLocalAddress());
