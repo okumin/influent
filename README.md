@@ -1,5 +1,6 @@
 # Influent
 
+[![Build Status](https://travis-ci.org/okumin/influent.svg?branch=master)](https://travis-ci.org/okumin/influent)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.okumin/influent-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.okumin/influent-java)
 [![javadoc](http://javadoc-badge.appspot.com/com.okumin/influent-java.svg)](http://javadoc-badge.appspot.com/com.okumin/influent-java/index.html)
 
