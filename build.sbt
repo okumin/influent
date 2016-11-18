@@ -33,6 +33,8 @@ lazy val commonSettings = Seq(
   organization := "com.okumin",
   version := "0.1.0",
   scalaVersion := "2.11.8",
+  javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
+  javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.21",
     "org.mockito" % "mockito-core" % "2.2.11" % "test",
