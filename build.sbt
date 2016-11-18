@@ -15,6 +15,7 @@ lazy val influentJava = (project in file("influent-java"))
 lazy val influentTransport = (project in file("influent-transport"))
   .settings(commonSettings: _*)
   .settings(javaSettings: _*)
+  .settings(publishSettings: _*)
   .settings(
     name := "influent-transport"
   )
@@ -31,7 +32,7 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
 
 lazy val commonSettings = Seq(
   organization := "com.okumin",
-  version := "0.1.0",
+  version := "0.2.0",
   scalaVersion := "2.11.8",
   fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
