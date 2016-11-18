@@ -7,7 +7,7 @@ import influent.exception.InfluentIOException;
 /**
  * An attachment for new IO operations.
  */
-public interface NioAttachment {
+public interface NioAttachment extends AutoCloseable {
   /**
    * Handles a read event.
    * {@code NioAttachment} is closed when {@code onReadable} throws an exception.
