@@ -33,6 +33,7 @@ lazy val commonSettings = Seq(
   organization := "com.okumin",
   version := "0.1.0",
   scalaVersion := "2.11.8",
+  fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
   javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
