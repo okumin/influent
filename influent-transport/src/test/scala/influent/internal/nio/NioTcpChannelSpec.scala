@@ -18,6 +18,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
 
       assert(channel.write(src) === 4)
       verify(socketChannel).write(src)
+      verify(socketChannel, never()).close()
     }
 
     "fail with InfluentIOException" when {
@@ -29,6 +30,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
 
         assertThrows[InfluentIOException](channel.write(src))
         verify(socketChannel).write(src)
+        verify(socketChannel).close()
       }
     }
   }
@@ -41,6 +43,19 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       val channel = new NioTcpChannel(socketChannel)
 
       assert(channel.read(dst) === 4)
+      verify(socketChannel, never()).close()
+    }
+
+    "do nothing" when {
+      "the socket buffer is empty" in {
+        val dst = ByteBuffer.allocate(8)
+        val socketChannel = mock[SocketChannel]
+        when(socketChannel.read(dst)).thenReturn(0)
+        val channel = new NioTcpChannel(socketChannel)
+
+        assert(channel.read(dst) === 0)
+        verify(socketChannel, never()).close()
+      }
     }
 
     "return -1" when {
@@ -51,6 +66,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val channel = new NioTcpChannel(socketChannel)
 
         assert(channel.read(dst) === -1)
+        verify(socketChannel).close()
       }
     }
 
@@ -62,6 +78,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val channel = new NioTcpChannel(socketChannel)
 
         assertThrows[InfluentIOException](channel.read(dst))
+        verify(socketChannel).close()
       }
     }
   }
@@ -95,6 +112,26 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val channel = new NioTcpChannel(socketChannel)
         assert(channel.close() === ())
         verify(socketChannel).close()
+      }
+    }
+  }
+
+  "isOpen" should {
+    "return true" when {
+      "the channel is open" in {
+        val socketChannel = mock[SocketChannel]
+        when(socketChannel.isOpen).thenReturn(true)
+        val channel = new NioTcpChannel(socketChannel)
+        assert(channel.isOpen)
+      }
+    }
+
+    "return false" when {
+      "the channel is closed" in {
+        val socketChannel = mock[SocketChannel]
+        when(socketChannel.isOpen).thenReturn(false)
+        val channel = new NioTcpChannel(socketChannel)
+        assert(!channel.isOpen)
       }
     }
   }

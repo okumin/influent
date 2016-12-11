@@ -22,6 +22,14 @@ public final class Exceptions {
     void run() throws Exception;
   }
 
+  /**
+   * Boolean specialized callable.
+   */
+  @FunctionalInterface
+  public interface BooleanCallable {
+    boolean call() throws Exception;
+  }
+
   private static final Logger logger = LoggerFactory.getLogger(Exceptions.class);
 
   private Exceptions() {
@@ -54,6 +62,20 @@ public final class Exceptions {
       return f.call();
     } catch (final Exception e) {
       return null;
+    }
+  }
+
+  /**
+   * Executes the given processing and return false if the processing throws an exception.
+   *
+   * @param f the processing
+   * @return true if {@code f} returns true
+   */
+  public static boolean orFalse(final BooleanCallable f) {
+    try {
+      return f.call();
+    } catch (final Exception e) {
+      return false;
     }
   }
 }

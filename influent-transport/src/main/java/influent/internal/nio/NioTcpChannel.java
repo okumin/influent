@@ -71,6 +71,7 @@ public final class NioTcpChannel implements AutoCloseable {
       throw new AssertionError(e);
     } catch (final IOException e) {
       // ClosedChannelException is an IOException
+      close();
       final String message = "This channel is broken. remote address = " + getRemoteAddress();
       throw new InfluentIOException(message, e);
     }
@@ -85,13 +86,19 @@ public final class NioTcpChannel implements AutoCloseable {
    */
   public int read(final ByteBuffer dst) {
     try {
-      return channel.read(dst);
+      final int readSize = channel.read(dst);
+      if (readSize < 0) {
+        close();
+      }
+      return readSize;
     } catch (final NotYetConnectedException | AsynchronousCloseException e) {
       // ClosedByInterruptException is an AsynchronousCloseException
       throw new AssertionError(e);
     } catch (final ClosedChannelException e) {
+      close();
       return -1;
     } catch (final IOException e) {
+      close();
       final String message = "This channel is broken. remote address = " + getRemoteAddress();
       throw new InfluentIOException(message, e);
     }
@@ -121,6 +128,13 @@ public final class NioTcpChannel implements AutoCloseable {
 
   private void closeChannel(final SocketChannel channel) {
     Exceptions.ignore(channel::close, "Failed closing the socket channel." + getRemoteAddress());
+  }
+
+  /**
+   * @return true if this channel is open
+   */
+  public boolean isOpen() {
+    return Exceptions.orFalse(channel::isOpen);
   }
 
   /**

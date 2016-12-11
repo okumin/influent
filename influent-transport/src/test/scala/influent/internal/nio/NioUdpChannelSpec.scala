@@ -23,6 +23,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       val actual = channel.send(src, target)
       assert(actual)
       verify(datagramChannel).send(src, target)
+      verify(datagramChannel, never()).close()
     }
 
     "not send and return false" when {
@@ -37,6 +38,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
         val actual = channel.send(src, target)
         assert(!actual)
         verify(datagramChannel).send(src, target)
+        verify(datagramChannel, never()).close()
       }
     }
 
@@ -51,6 +53,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
 
         assertThrows[InfluentIOException](channel.send(src, target))
         verify(datagramChannel).send(src, target)
+        verify(datagramChannel).close()
       }
     }
   }
@@ -67,6 +70,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       val actual = channel.receive(dst)
       assert(actual.get() === expected)
       verify(datagramChannel).receive(dst)
+      verify(datagramChannel, never()).close()
     }
 
     "return Optional.empty()" when {
@@ -80,6 +84,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
         val actual = channel.receive(dst)
         assert(actual === Optional.empty())
         verify(datagramChannel).receive(dst)
+        verify(datagramChannel, never()).close()
       }
     }
 
@@ -93,6 +98,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
 
         assertThrows[InfluentIOException](channel.receive(dst))
         verify(datagramChannel).receive(dst)
+        verify(datagramChannel).close()
       }
     }
   }

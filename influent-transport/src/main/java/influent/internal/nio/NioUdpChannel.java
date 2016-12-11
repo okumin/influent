@@ -83,6 +83,7 @@ public final class NioUdpChannel implements AutoCloseable {
       throw new AssertionError();
     } catch (final IOException e) {
       // ClosedChannelException is an IOException
+      close();
       final String message = "The channel is broken. local address = " + getLocalAddress();
       throw new InfluentIOException(message, e);
     }
@@ -103,6 +104,7 @@ public final class NioUdpChannel implements AutoCloseable {
       throw new AssertionError(e);
     } catch (final IOException e) {
       // ClosedChannelException is an IOException
+      close();
       final String message = "The channel is broken. local address = " + getLocalAddress();
       throw new InfluentIOException(message, e);
     }
