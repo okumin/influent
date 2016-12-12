@@ -143,7 +143,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       when(unpacker.hasNext).thenReturn(true, true, true, true, false)
       val dummyValue = new ImmutableStringValueImpl("mofu")
       when(unpacker.next()).thenReturn(dummyValue)
-      when(unpacker.isCompleted).thenReturn(false)
+      when(channel.isOpen).thenReturn(true)
 
       val decoder = mock[MsgpackForwardRequestDecoder]
       val requests = Seq(
@@ -257,7 +257,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val channel = mock[NioTcpChannel]
         val unpacker = mock[MsgpackStreamUnpacker]
         when(unpacker.hasNext).thenReturn(false)
-        when(unpacker.isCompleted).thenReturn(true)
+        when(channel.isOpen).thenReturn(false)
 
         val eventLoop = mock[NioEventLoop]
         val callback = mock[ForwardCallback]
@@ -335,7 +335,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val callback = mock[ForwardCallback]
         val channel = mock[NioTcpChannel]
         val unpacker = mock[MsgpackStreamUnpacker]
-        when(unpacker.read(channel)).thenThrow(new InfluentIOException())
+        when(unpacker.feed(channel)).thenThrow(new InfluentIOException())
         val connection = new NioForwardConnection(
           channel, mock[NioEventLoop], callback, unpacker, mock[MsgpackForwardRequestDecoder]
         )

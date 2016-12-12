@@ -1,17 +1,10 @@
 package influent.internal.msgpack;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
-import org.msgpack.core.MessageInsufficientBufferException;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ImmutableValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import influent.exception.InfluentIOException;
 import influent.internal.nio.NioTcpChannel;
@@ -24,24 +17,21 @@ import influent.internal.nio.NioTcpChannel;
  * {@code MsgpackStreamUnpacker} is not thread-safe.
  */
 public final class MsgpackStreamUnpacker {
-  private static final Logger logger = LoggerFactory.getLogger(MsgpackStreamUnpacker.class);
-  private static final int BUFFER_SIZE = 1024;
-
-  private final BufferList buffers = new BufferList();
-  private final MessageUnpacker unpacker =
-      MessagePack.newDefaultUnpacker(new ByteBuffersInput(buffers));
-  private final Queue<ImmutableValue> unpackedValues = new LinkedList<>();
+  private final InfluentByteBuffer buffer;
   private final long chunkSizeLimit;
 
-  private boolean isCompleted = false;
+  private final Queue<ImmutableValue> unpackedValues = new LinkedList<>();
+  private MsgpackIncrementalUnpacker currentUnpacker = FormatUnpacker.getInstance();
+  private long currentChunkSize = 0;
 
   /**
    * Constructs a new {@code MsgpackStreamUnpacker}.
    *
    * @param chunkSizeLimit the allowable chunk size
-   *                       {@code read} fails when the size of reading chunk exceeds the limit
+   *                       {@code feed} fails when the size of reading chunk exceeds the limit
    */
   public MsgpackStreamUnpacker(final long chunkSizeLimit) {
+    this.buffer = new InfluentByteBuffer(chunkSizeLimit);
     this.chunkSizeLimit = chunkSizeLimit;
   }
 
@@ -52,56 +42,37 @@ public final class MsgpackStreamUnpacker {
    * @throws InfluentIOException when it fails reading from the channel
    *                             or the chunk size exceeds the limit
    */
-  public void read(final NioTcpChannel channel) {
-    // TODO: optimize
+  public void feed(final NioTcpChannel channel) {
     boolean toBeContinued = true;
     while (toBeContinued) {
-      toBeContinued = consume(channel);
-      unpack();
+      toBeContinued = buffer.feed(channel);
+      unpack(channel);
     }
-  }
-
-  // read until the size of buffer exceeds the limit or socket buffer becomes empty
-  // true if it can continue consuming
-  private boolean consume(final NioTcpChannel channel) {
-    while (buffers.sizeInBytes() < chunkSizeLimit) {
-      final ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-      final int readSize = channel.read(buffer);
-      if (readSize < 0) {
-        // don't throw error since current chunks should be consumed even when the channel is closed
-        isCompleted = true;
-        return false;
-      }
-      if (readSize == 0) {
-        return false; // the socket buffer is empty
-      }
-      buffer.flip();
-      buffers.add(buffer.slice());
-    }
-    // the chunk limit exceeded
-    // retry consuming after unpacking
-    return true;
   }
 
   // fails when the chunk size exceeds the limit
-  private void unpack() {
-    while (true) {
+  private void unpack(final NioTcpChannel channel) {
+    while (buffer.hasRemaining()) {
       try {
-        unpacker.reset(new ByteBuffersInput(buffers));
-        final ImmutableValue value = unpacker.unpackValue();
-        final long decodedSize = unpacker.getTotalReadBytes();
-        buffers.dropBytes(decodedSize);
-        unpackedValues.offer(value);
-      } catch (final MessageInsufficientBufferException e) {
-        logger.debug("Buffers has only insufficient data.");
-        if (buffers.sizeInBytes() >= chunkSizeLimit) {
-          isCompleted = true;
+        currentChunkSize += buffer.remaining();
+        final DecodeResult result = currentUnpacker.unpack(buffer);
+        currentChunkSize -= buffer.remaining();
+        if (result.isCompleted()) {
+          unpackedValues.offer(result.value());
+          currentUnpacker = FormatUnpacker.getInstance();
+          currentChunkSize = 0;
+        } else if (currentChunkSize >= chunkSizeLimit) {
+          channel.close();
           throw new InfluentIOException("The chunk size exceeds the limit. size = "
-              + buffers.sizeInBytes() + ", limit = " + chunkSizeLimit);
+              + buffer.remaining() + ", limit = " + chunkSizeLimit);
+        } else {
+          currentUnpacker = result.next();
+          break;
         }
-        break; // retry after the next reading
-      } catch (final IOException e) {
-        isCompleted = true;
+      } catch (final InfluentIOException e) {
+        throw e;
+      } catch (final Exception e) {
+        channel.close();
         throw new InfluentIOException("Failed unpacking.", e);
       }
     }
@@ -119,16 +90,6 @@ public final class MsgpackStreamUnpacker {
    * @throws NoSuchElementException when no next value is found
    */
   public ImmutableValue next() {
-    if (unpackedValues.isEmpty()) {
-      throw new NoSuchElementException("This unpacker has no next value.");
-    }
-    return unpackedValues.poll();
-  }
-
-  /**
-   * @return true when the stream is completed
-   */
-  public boolean isCompleted() {
-    return isCompleted;
+    return unpackedValues.remove();
   }
 }

@@ -30,7 +30,7 @@ class MsgpackStreamUnpackerSpec
         (messages, bytes.grouped(split).toList)
       }
 
-      implicit val shrink: Shrink[(List[String], List[Array[Byte]], Array[Byte])] = Shrink.shrinkAny
+      implicit val shrink: Shrink[(List[String], List[Array[Byte]])] = Shrink.shrinkAny
       forAll(gen) {
         case (messages, chunks) =>
           val channel = mock[NioTcpChannel]
@@ -52,7 +52,7 @@ class MsgpackStreamUnpackerSpec
           stub.thenReturn(0)
 
           val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-          assert(unpacker.read(channel) === ())
+          assert(unpacker.feed(channel) === ())
 
           val values = (1 to messages.size).map { _ =>
             assert(unpacker.hasNext)
@@ -62,7 +62,7 @@ class MsgpackStreamUnpackerSpec
 
           assert(!unpacker.hasNext)
           assertThrows[NoSuchElementException](unpacker.next())
-          assert(!unpacker.isCompleted)
+          verify(channel, never()).close()
       }
     }
 
@@ -94,15 +94,15 @@ class MsgpackStreamUnpackerSpec
         .thenReturn(0)
 
       val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-      assert(unpacker.read(channel) === ())
+      assert(unpacker.feed(channel) === ())
 
       assert(!unpacker.hasNext)
       assertThrows[NoSuchElementException](unpacker.next())
 
-      assert(unpacker.read(channel) === ())
+      assert(unpacker.feed(channel) === ())
       assert(unpacker.hasNext)
       assert(unpacker.next().asStringValue().asString() === message)
-      assert(!unpacker.isCompleted)
+      verify(channel, never()).close()
     }
 
     "handle messages which size is less than or equal to the limit" in {
@@ -114,6 +114,7 @@ class MsgpackStreamUnpackerSpec
         groupSize <- Gen.chooseNum(1, 1024) // less then buffer size
       } yield (limitNotExceeded, limit, groupSize)
 
+      implicit val shrink: Shrink[(List[String], Int, Int)] = Shrink.shrinkAny
       forAll(gen) {
         case (strings, limit, groupSize) =>
           val packer = MessagePack.newDefaultBufferPacker()
@@ -135,7 +136,7 @@ class MsgpackStreamUnpackerSpec
             }))
           val unpacker = new MsgpackStreamUnpacker(limit)
 
-          assert(unpacker.read(channel) === ())
+          assert(unpacker.feed(channel) === ())
           strings.foreach { string =>
             assert(unpacker.hasNext)
             assert(unpacker.next().asStringValue().asString() === string)
@@ -145,7 +146,7 @@ class MsgpackStreamUnpackerSpec
     }
   }
 
-  "read" should {
+  "feed" should {
     "decode a large string" in {
       val packer = MessagePack.newDefaultBufferPacker()
       packer.packString("1" * 65536)
@@ -167,20 +168,10 @@ class MsgpackStreamUnpackerSpec
         }))
       val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
 
-      assert(unpacker.read(channel) === ())
+      assert(unpacker.feed(channel) === ())
       assert(unpacker.next().asStringValue().asString() === "1" * 65536)
       assert(!unpacker.hasNext)
-    }
-
-    "completes the unpacker" when {
-      "the stream is completed" in {
-        val channel = mock[NioTcpChannel]
-        when(channel.read(ByteBuffer.allocate(1024))).thenReturn(-1)
-        val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-
-        assert(unpacker.read(channel) === ())
-        assert(unpacker.isCompleted)
-      }
+      verify(channel, never()).close()
     }
 
     "fail with InfluentIOException" when {
@@ -188,7 +179,7 @@ class MsgpackStreamUnpackerSpec
         val channel = mock[NioTcpChannel]
         when(channel.read(ByteBuffer.allocate(1024))).thenThrow(new InfluentIOException())
         val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-        assertThrows[InfluentIOException](unpacker.read(channel))
+        assertThrows[InfluentIOException](unpacker.feed(channel))
       }
 
       "the chunk size exceeds the limit" in {
@@ -225,18 +216,18 @@ class MsgpackStreamUnpackerSpec
           }))
         val unpacker = new MsgpackStreamUnpacker(1024)
 
-        assert(unpacker.read(channel) === ())
+        assert(unpacker.feed(channel) === ())
         assert(!unpacker.hasNext)
 
-        assert(unpacker.read(channel) === ())
+        assert(unpacker.feed(channel) === ())
         assert(unpacker.next().asStringValue().asString() === "1" * 1000)
         assert(unpacker.next().asStringValue().asString() === "2" * 1001)
         assert(unpacker.next().asStringValue().asString() === "3" * 1021)
         assert(!unpacker.hasNext)
 
-        assertThrows[InfluentIOException](unpacker.read(channel))
+        assertThrows[InfluentIOException](unpacker.feed(channel))
         assert(!unpacker.hasNext)
-        assert(unpacker.isCompleted)
+        verify(channel).close()
       }
     }
   }
