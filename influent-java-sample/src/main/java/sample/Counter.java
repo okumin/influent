@@ -1,6 +1,6 @@
 package sample;
 
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -41,10 +41,10 @@ public class Counter {
   public static void main(final String[] args) {
     final Reporter reporter = new Reporter();
 
-    final ForwardCallback callback = ForwardCallback.ofSyncConsumer(
-        stream -> reporter.add(stream.getEntries().size()),
-        Executors.newFixedThreadPool(1)
-    );
+    final ForwardCallback callback = ForwardCallback.of(stream -> {
+      reporter.add(stream.getEntries().size());
+      return CompletableFuture.completedFuture(null);
+    });
 
     final ForwardServer server = new ForwardServer.Builder(callback).build();
     server.start();
