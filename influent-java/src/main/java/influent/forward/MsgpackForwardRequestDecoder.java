@@ -1,6 +1,7 @@
 package influent.forward;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import org.msgpack.core.MessageStringCodingException;
 import org.msgpack.core.MessageTypeCastException;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ArrayValue;
+import org.msgpack.value.ExtensionValue;
 import org.msgpack.value.ImmutableArrayValue;
 import org.msgpack.value.ImmutableMapValue;
 import org.msgpack.value.ImmutableValue;
@@ -31,8 +33,13 @@ import influent.Tag;
 final class MsgpackForwardRequestDecoder {
   private static final Value CHUNK_KEY = new ImmutableStringValueImpl("chunk");
   private static final Value COMPRESSED_KEY = new ImmutableStringValueImpl("compressed");
+  private static final int EVENT_TIME_LENGTH = 8;
 
   private final Clock clock;
+  private final ThreadLocal<ByteBuffer> eventTimeBuffer = ThreadLocal
+      .withInitial(
+          () -> ByteBuffer.allocate(EVENT_TIME_LENGTH)
+      );
 
   MsgpackForwardRequestDecoder() {
     this(Clock.systemUTC());
@@ -152,15 +159,31 @@ final class MsgpackForwardRequestDecoder {
 
   private Instant decodeTime(final Value value) {
     try {
-      // TODO: handle EventTime
-      final long seconds = value.asIntegerValue().asLong();
-      if (seconds == 0) {
+      if (value.isNilValue()) {
         return Instant.now(clock);
-      } else {
-        return Instant.ofEpochSecond(seconds);
       }
-    } catch (final MessageTypeCastException e) {
-      throw error("The given time is not an integer.", value, e);
+
+      final Instant time;
+      if (value.isExtensionValue()) {
+        final ExtensionValue extValue = value.asExtensionValue();
+        if (extValue.getType() != 0 || extValue.getData().length != EVENT_TIME_LENGTH) {
+          throw error("The given time has invalid format.", value);
+        }
+        final ByteBuffer buffer = eventTimeBuffer.get();
+        buffer.clear();
+        buffer.put(extValue.getData()).flip();
+        final long seconds = buffer.getInt();
+        final long nanoseconds = buffer.getInt();
+        time = Instant.ofEpochSecond(seconds, nanoseconds);
+      } else if (value.isIntegerValue()) {
+        final long seconds = value.asIntegerValue().asLong();
+        time = Instant.ofEpochSecond(seconds);
+      } else {
+        throw error("The given time has invalid format.", value);
+      }
+
+      // nanoseconds is ignored
+      return time.getEpochSecond() == 0 ? Instant.now(clock) : time;
     } catch (final MessageIntegerOverflowException e) {
       throw error("The given time is out of long range.", value, e);
     } catch (final DateTimeException e) {
