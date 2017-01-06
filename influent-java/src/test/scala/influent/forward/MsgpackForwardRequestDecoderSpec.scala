@@ -2,11 +2,12 @@ package influent.forward
 
 import influent._
 import java.math.BigInteger
+import java.nio.ByteBuffer
 import java.time.{Clock, Instant, ZoneId}
 import java.util.Optional
 import org.msgpack.core.MessagePack
-import org.msgpack.value.Value
 import org.msgpack.value.impl._
+import org.msgpack.value.{Value, ValueFactory}
 import org.scalatest.WordSpec
 import scala.collection.JavaConverters._
 
@@ -22,6 +23,10 @@ class MsgpackForwardRequestDecoderSpec extends WordSpec {
   }
   private[this] def map(kvs: (Value, Value)*): ImmutableMapValueImpl = {
     new ImmutableMapValueImpl(kvs.flatMap { case (k, v) => Seq(k, v) }.toArray)
+  }
+  private[this] def eventTime(seconds: Int, nanoseconds: Int): ImmutableExtensionValueImpl = {
+    val bytes = ByteBuffer.allocate(8).putInt(seconds).putInt(nanoseconds).array()
+    new ImmutableExtensionValueImpl(0, bytes)
   }
 
   "decode" should {
@@ -168,6 +173,27 @@ class MsgpackForwardRequestDecoderSpec extends WordSpec {
       assert(actual.get() === expected)
     }
 
+    "parse EventTime" in {
+      val decoder = new MsgpackForwardRequestDecoder
+      val value = array(
+        string("tag"),
+        eventTime(999, 334),
+        map(string("key") -> string("value"))
+      )
+
+      val actual = decoder.decode(value)
+      val expected = ForwardRequest.of(
+        EventStream.of(
+          Tag.of("tag"),
+          Seq(EventEntry.of(
+            Instant.ofEpochSecond(999, 334), map(string("key") -> string("value"))
+          )).asJava
+        ),
+        ForwardOption.empty()
+      )
+      assert(actual.get() === expected)
+    }
+
     "return the current time" when {
       "the time is zero" in {
         val instant = Instant.ofEpochSecond(1000, 9999)
@@ -176,6 +202,52 @@ class MsgpackForwardRequestDecoderSpec extends WordSpec {
         val value = array(
           string("tag"),
           integer(0),
+          map(string("key") -> string("value"))
+        )
+
+        val actual = decoder.decode(value)
+        val expected = ForwardRequest.of(
+          EventStream.of(
+            Tag.of("tag"),
+            Seq(EventEntry.of(
+              instant, map(string("key") -> string("value"))
+            )).asJava
+          ),
+          ForwardOption.empty()
+        )
+        assert(actual.get() === expected)
+      }
+
+      "the seconds of EventTime is zero" in {
+        val instant = Instant.ofEpochSecond(1000, 9999)
+        val clock = Clock.fixed(instant, ZoneId.of("UTC"))
+        val decoder = new MsgpackForwardRequestDecoder(clock)
+        val value = array(
+          string("tag"),
+          eventTime(0, 334),
+          map(string("key") -> string("value"))
+        )
+
+        val actual = decoder.decode(value)
+        val expected = ForwardRequest.of(
+          EventStream.of(
+            Tag.of("tag"),
+            Seq(EventEntry.of(
+              instant, map(string("key") -> string("value"))
+            )).asJava
+          ),
+          ForwardOption.empty()
+        )
+        assert(actual.get() === expected)
+      }
+
+      "the time is nil" in {
+        val instant = Instant.ofEpochSecond(1000, 9999)
+        val clock = Clock.fixed(instant, ZoneId.of("UTC"))
+        val decoder = new MsgpackForwardRequestDecoder(clock)
+        val value = array(
+          string("tag"),
+          ValueFactory.newNil(),
           map(string("key") -> string("value"))
         )
 
