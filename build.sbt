@@ -27,7 +27,8 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
     name := "influent-java-sample",
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.1.7"
-    )
+    ),
+    assemblyJarName in assembly := "influent-java-sample.jar"
   ).dependsOn(influentJava)
 
 lazy val commonSettings = Seq(
