@@ -122,13 +122,13 @@ final class NioForwardConnection implements NioAttachment {
   @Override
   public void onReadable(final SelectionKey key) {
     receiveRequests(key);
-    if (unpacker.isCompleted()) {
+    if (!channel.isOpen()) {
       close();
     }
   }
 
   private void receiveRequests(final SelectionKey key) {
-    unpacker.read(channel);
+    unpacker.feed(channel);
     while (unpacker.hasNext()) {
       try {
         decoder.decode(unpacker.next()).ifPresent(result -> {
