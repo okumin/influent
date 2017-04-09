@@ -3,16 +3,19 @@ package influent.forward;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
 import influent.internal.nio.NioEventLoop;
+import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioTcpAcceptor;
 
 /**
  * A {@code ForwardServer} implemented by NIO.
  */
 final class NioForwardServer implements ForwardServer {
-  private final NioEventLoop eventLoop;
+  private final NioEventLoop bossEventLoop;
+  private final NioEventLoopPool workerEventLoopPool;
 
   /**
    * Creates a {@code NioForwardServer}.
@@ -25,6 +28,7 @@ final class NioForwardServer implements ForwardServer {
    * @param receiveBufferSize dequeue buffer size, it must be greater than or equal to zero
    * @param keepAliveEnabled whether SO_KEEPALIVE is enabled or not
    * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
+   * @param workerPoolSize the event loop pool size for workers
    * @throws IllegalArgumentException if any of parameter is invalid
    *                                  e.g. the local address is already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
@@ -36,22 +40,27 @@ final class NioForwardServer implements ForwardServer {
                    final int sendBufferSize,
                    final int receiveBufferSize,
                    final boolean keepAliveEnabled,
-                   final boolean tcpNoDelayEnabled) {
-    this.eventLoop = NioEventLoop.open();
+                   final boolean tcpNoDelayEnabled,
+                   final int workerPoolSize) {
+    bossEventLoop = NioEventLoop.open();
+    workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
     final Consumer<SocketChannel> channelFactory = socketChannel -> new NioForwardConnection(
-        socketChannel, eventLoop, callback, chunkSizeLimit, sendBufferSize,
+        socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
         keepAliveEnabled, tcpNoDelayEnabled
     );
-    new NioTcpAcceptor(localAddress, eventLoop, channelFactory, backlog, receiveBufferSize);
-    new NioUdpHeartbeatServer(localAddress, eventLoop);
+    new NioTcpAcceptor(
+        localAddress, bossEventLoop, channelFactory, backlog, receiveBufferSize
+    );
+    new NioUdpHeartbeatServer(localAddress, bossEventLoop);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void run() {
-    eventLoop.run();
+  public void start(final ThreadFactory threadFactory) {
+    workerEventLoopPool.start(threadFactory);
+    threadFactory.newThread(bossEventLoop).start();
   }
 
   /**
@@ -59,6 +68,6 @@ final class NioForwardServer implements ForwardServer {
    */
   @Override
   public CompletableFuture<Void> shutdown() {
-    return eventLoop.shutdown();
+    return bossEventLoop.shutdown().thenCompose(x -> workerEventLoopPool.shutdown());
   }
 }
