@@ -10,11 +10,13 @@ import java.util.concurrent.ThreadFactory;
 /**
  * A server which accepts requests of Fluentd's forward protocol.
  */
-public interface ForwardServer extends Runnable {
+public interface ForwardServer {
   /**
    * A builder of {@code ForwardServer}.
    */
   class Builder {
+    private static int DEFAULT_WORKER_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
+
     private static final int DEFAULT_PORT = 24224;
 
     private final ForwardCallback forwardCallback;
@@ -26,6 +28,7 @@ public interface ForwardServer extends Runnable {
     private int receiveBufferSize = 0;
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
+    private int workerPoolSize = 0;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -145,6 +148,21 @@ public interface ForwardServer extends Runnable {
     }
 
     /**
+     * Sets the event loop pool size.
+     * The larger {@code poolSize} is given, the larger number of threads concurrently run.
+     *
+     * @param value the event loop pool size
+     * @return this builder
+     */
+    public Builder workerPoolSize(final int value) {
+      if (value <= 0) {
+        throw new IllegalArgumentException("Buffer size must be greater than 0.");
+      }
+      workerPoolSize = value;
+      return this;
+    }
+
+    /**
      * Creates a new {@code ForwardServer}.
      *
      * @return the new {@code ForwardServer}
@@ -161,15 +179,11 @@ public interface ForwardServer extends Runnable {
           sendBufferSize,
           receiveBufferSize,
           keepAliveEnabled,
-          tcpNoDelayEnabled
+          tcpNoDelayEnabled,
+          workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize
       );
     }
   }
-
-  /**
-   * Starts this {@code ForwardServer} and works until {@code shutdown} is completed.
-   */
-  void run();
 
   /**
    * Starts and spawns this {@code ForwardServer}.
@@ -183,9 +197,7 @@ public interface ForwardServer extends Runnable {
    *
    * @param threadFactory the {@code ThreadFactory}
    */
-  default void start(final ThreadFactory threadFactory) {
-    threadFactory.newThread(this).start();
-  }
+  void start(final ThreadFactory threadFactory);
 
   /**
    * Terminates this {@code ForwardServer}.

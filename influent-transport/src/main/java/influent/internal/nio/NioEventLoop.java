@@ -145,7 +145,7 @@ public final class NioEventLoop implements Runnable {
    * and {@code NioEventLoop#shutdown} returns a {@code CompletedFuture}.
    *
    * @return {@code CompletableFuture} the future that will be completed when this event loop stops
-   * @throws IllegalStateException when this acceptor is not started
+   * @throws IllegalStateException when this event loop is not started
    */
   public CompletableFuture<Void> shutdown() {
     if (state.get() == State.IDLE) {

@@ -39,6 +39,8 @@ public class Counter {
   private static final Logger logger = LoggerFactory.getLogger(Counter.class);
 
   public static void main(final String[] args) {
+    final int workerPoolSize = Integer.parseInt(args[0]);
+
     final Reporter reporter = new Reporter();
 
     final ForwardCallback callback = ForwardCallback.of(stream -> {
@@ -46,7 +48,10 @@ public class Counter {
       return CompletableFuture.completedFuture(null);
     });
 
-    final ForwardServer server = new ForwardServer.Builder(callback).build();
+    final ForwardServer server = new ForwardServer
+        .Builder(callback)
+        .workerPoolSize(workerPoolSize)
+        .build();
     server.start();
     new Thread(reporter).start();
   }
