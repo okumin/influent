@@ -1,6 +1,17 @@
 
 lazy val root = (project in file(".")).aggregate(influentJava, influentTransport)
 
+lazy val influentSparkStreaming = (project in file("influent-spark-streaming"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "influent-spark-streaming",
+    libraryDependencies ++= Seq(
+      "org.apache.spark" %% "spark-streaming" % "2.1.1" % "provided"
+    ),
+    run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in(Compile, run), runner in(Compile, run))
+  ).dependsOn(influentJava)
+
+
 lazy val influentJava = (project in file("influent-java"))
   .settings(commonSettings: _*)
   .settings(javaSettings: _*)
@@ -19,6 +30,17 @@ lazy val influentTransport = (project in file("influent-transport"))
   .settings(
     name := "influent-transport"
   )
+
+lazy val influentSparkStreamingSample = (project in file("influent-spark-streaming-sample"))
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.spark" %% "spark-streaming" % "2.1.1" % "provided"
+    ),
+    assemblyJarName in assembly := "influent-spark-streaming-sample.jar",
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+    run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in(Compile, run), runner in(Compile, run))
+  ).dependsOn(influentSparkStreaming)
 
 lazy val influentJavaSample = (project in file("influent-java-sample"))
   .settings(commonSettings: _*)
