@@ -8,7 +8,7 @@ lazy val influentJava = (project in file("influent-java"))
   .settings(
     name := "influent-java",
     libraryDependencies ++= Seq(
-      "org.msgpack" % "msgpack-core" % "0.8.11"
+      "org.msgpack" % "msgpack-core" % "0.8.13"
     )
   ).dependsOn(influentTransport)
 
@@ -26,22 +26,22 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
   .settings(
     name := "influent-java-sample",
     libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-classic" % "1.1.7"
+      "ch.qos.logback" % "logback-classic" % "1.2.3"
     ),
     assemblyJarName in assembly := "influent-java-sample.jar"
   ).dependsOn(influentJava)
 
 lazy val commonSettings = Seq(
   organization := "com.okumin",
-  version := "0.2.0",
-  scalaVersion := "2.11.8",
+  version := "0.3.0",
+  scalaVersion := "2.11.11",
   fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
   javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
-    "org.slf4j" % "slf4j-api" % "1.7.21",
-    "org.mockito" % "mockito-core" % "2.2.11" % "test",
-    "org.scalatest" % "scalatest_2.11" % "3.0.0" % "test",
+    "org.slf4j" % "slf4j-api" % "1.7.25",
+    "org.mockito" % "mockito-core" % "2.8.47" % "test",
+    "org.scalatest" % "scalatest_2.11" % "3.0.1" % "test",
     "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
   )
 )
