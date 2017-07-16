@@ -72,13 +72,6 @@ lazy val publishSettings = Seq(
   },
   pomExtra := {
     <url>https://github.com/okumin/influent</url>
-    <licenses>
-      <license>
-        <name>Apache 2 License</name>
-        <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
     <scm>
       <url>git@github.com:okumin/influent.git</url>
       <connection>scm:git:git@github.com:okumin/influent.git</connection>
