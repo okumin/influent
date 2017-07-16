@@ -34,12 +34,12 @@ final class MsgpackForwardRequestDecoder {
   private static final Value CHUNK_KEY = new ImmutableStringValueImpl("chunk");
   private static final Value COMPRESSED_KEY = new ImmutableStringValueImpl("compressed");
   private static final int EVENT_TIME_LENGTH = 8;
-
-  private final Clock clock;
-  private final ThreadLocal<ByteBuffer> eventTimeBuffer = ThreadLocal
+  private static final ThreadLocal<ByteBuffer> EVENT_TIME_BUFFER = ThreadLocal
       .withInitial(
           () -> ByteBuffer.allocate(EVENT_TIME_LENGTH)
       );
+
+  private final Clock clock;
 
   MsgpackForwardRequestDecoder() {
     this(Clock.systemUTC());
@@ -169,7 +169,7 @@ final class MsgpackForwardRequestDecoder {
         if (extValue.getType() != 0 || extValue.getData().length != EVENT_TIME_LENGTH) {
           throw error("The given time has invalid format.", value);
         }
-        final ByteBuffer buffer = eventTimeBuffer.get();
+        final ByteBuffer buffer = EVENT_TIME_BUFFER.get();
         buffer.clear();
         buffer.put(extValue.getData()).flip();
         final long seconds = buffer.getInt();
