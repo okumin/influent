@@ -34,12 +34,11 @@ This means that they can use directly their domain logic written in Java or Java
 JVM has high performance and Java has good thread API and IO API.
 Influent makes it possible to upgrade performance for some applications.
 
-Note: no stress test against Influent has not yet been performed.
-
 ## TODO
 
 * handshake phase implementation
 * CompressedPackedForward mode implementation
+* TLS support
 * load test and performance improvement
 * Scala API
 
