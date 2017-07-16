@@ -53,7 +53,7 @@ Note: no stress test against Influent has not yet been performed.
 <dependency>
     <groupId>com.okumin</groupId>
     <artifactId>influent-java</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
