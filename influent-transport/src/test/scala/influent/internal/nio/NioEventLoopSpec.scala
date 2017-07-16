@@ -52,6 +52,8 @@ class NioEventLoopSpec extends WordSpec with GeneratorDrivenPropertyChecks with 
       "it has already started" in {
         val loop = NioEventLoop.open()
         new Thread(loop).start()
+        // Prevent `loop.run()` from overtaking the above thread
+        Thread.sleep(1000)
 
         assertThrows[IllegalStateException](loop.run())
         loop.shutdown().get()
