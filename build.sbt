@@ -10,7 +10,9 @@ lazy val influentJava = (project in file("influent-java"))
     libraryDependencies ++= Seq(
       "org.msgpack" % "msgpack-core" % "0.8.13"
     )
-  ).dependsOn(influentTransport)
+  )
+  .dependsOn(influentTransport)
+  .enablePlugins(AutomateHeaderPlugin)
 
 lazy val influentTransport = (project in file("influent-transport"))
   .settings(commonSettings: _*)
@@ -19,6 +21,7 @@ lazy val influentTransport = (project in file("influent-transport"))
   .settings(
     name := "influent-transport"
   )
+  .enablePlugins(AutomateHeaderPlugin)
 
 lazy val influentJavaSample = (project in file("influent-java-sample"))
   .settings(commonSettings: _*)
@@ -30,6 +33,7 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
     ),
     assemblyJarName in assembly := "influent-java-sample.jar"
   ).dependsOn(influentJava)
+  .enablePlugins(AutomateHeaderPlugin)
 
 lazy val commonSettings = Seq(
   organization := "com.okumin",
@@ -43,7 +47,11 @@ lazy val commonSettings = Seq(
     "org.mockito" % "mockito-core" % "2.8.47" % "test",
     "org.scalatest" % "scalatest_2.11" % "3.0.1" % "test",
     "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
-  )
+  ),
+  // sbt-header settings
+  organizationName := "okumin",
+  startYear := Some(2016),
+  licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 )
 
 lazy val javaSettings = Seq(
