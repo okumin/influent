@@ -18,20 +18,48 @@ package influent.forward;
 
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
+import influent.internal.nio.NioSslAcceptor;
 import influent.internal.nio.NioTcpAcceptor;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 /**
  * A {@code ForwardServer} implemented by NIO.
  */
 final class NioForwardServer implements ForwardServer {
+  public enum Protocol { TCP, TLS }
+  public enum TlsVersion {
+    None("None"),
+    TLSv1_1("TLSv1.1"),
+    TLSv1_2("TLSv1.2");
+
+    private final String version;
+
+    TlsVersion(String s) {
+      version = s;
+    }
+
+    @Override
+    public String toString() {
+      return version;
+    }
+  }
   private final NioEventLoop bossEventLoop;
   private final NioEventLoopPool workerEventLoopPool;
+  private final Protocol protocol;
+  private final TlsVersion tlsVersion;
+  private SSLContext context = null;
 
   /**
    * Creates a {@code NioForwardServer}.
@@ -58,16 +86,73 @@ final class NioForwardServer implements ForwardServer {
                    final boolean keepAliveEnabled,
                    final boolean tcpNoDelayEnabled,
                    final int workerPoolSize) {
+    this(localAddress, callback, chunkSizeLimit, backlog,
+        sendBufferSize, receiveBufferSize, keepAliveEnabled, tcpNoDelayEnabled,
+        workerPoolSize, Protocol.TCP, TlsVersion.None);
+    context = null;
+  }
+
+  NioForwardServer(final SocketAddress localAddress,
+                   final ForwardCallback callback,
+                   final long chunkSizeLimit,
+                   final int backlog,
+                   final int sendBufferSize,
+                   final int receiveBufferSize,
+                   final boolean keepAliveEnabled,
+                   final boolean tcpNoDelayEnabled,
+                   final int workerPoolSize,
+                   final Protocol protocol,
+                   final TlsVersion tlsVersion) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
-    final Consumer<SocketChannel> channelFactory = socketChannel -> new NioForwardConnection(
-        socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
-        keepAliveEnabled, tcpNoDelayEnabled
-    );
-    new NioTcpAcceptor(
-        localAddress, bossEventLoop, channelFactory, backlog, receiveBufferSize
-    );
+    this.protocol = protocol;
+    this.tlsVersion = tlsVersion;
+    switch (protocol) {
+      case TCP:
+        context = null;
+        final Consumer<SocketChannel> tcpChannelFactory = socketChannel -> new NioForwardConnection(
+            socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
+            keepAliveEnabled, tcpNoDelayEnabled
+        );
+        new NioTcpAcceptor(
+            localAddress, bossEventLoop, tcpChannelFactory, backlog, receiveBufferSize
+        );
+        break;
+      case TLS:
+        try {
+          context = SSLContext.getInstance(tlsVersion.toString());
+          context.init(
+              createKeyManagers("", "", ""),
+              createTrustManagers("", ""),
+              new SecureRandom()
+          );
+        } catch (NoSuchAlgorithmException e) {
+          throw new AssertionError(e.getMessage());
+        } catch (KeyManagementException e) {
+          e.printStackTrace();
+        }
+        final Consumer<SocketChannel> tlsChannelFactory = socketChannel -> new NioSslForwardConnection(
+            socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
+            keepAliveEnabled, tcpNoDelayEnabled
+        );
+        new NioSslAcceptor(
+            localAddress, bossEventLoop, tlsChannelFactory, backlog, receiveBufferSize
+        );
+        break;
+      default:
+        throw new IllegalArgumentException("Unknow protocol: " + protocol.name());
+    }
     new NioUdpHeartbeatServer(localAddress, bossEventLoop);
+  }
+
+  private KeyManager[] createKeyManagers(String filepath, String keystorePassword, String keyPassword) {
+    // TODO
+    return null;
+  }
+
+  private TrustManager[] createTrustManagers(String filepath, String keystorePassword) {
+    // TODO
+    return null;
   }
 
   /**

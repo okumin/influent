@@ -31,7 +31,7 @@ import influent.internal.util.Exceptions;
 /**
  * A non-blocking mode {@code SocketChannel}.
  */
-public final class NioTcpChannel implements AutoCloseable {
+public final class NioTcpChannel implements NioChannel {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
 

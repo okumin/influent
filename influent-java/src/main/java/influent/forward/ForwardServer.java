@@ -45,6 +45,8 @@ public interface ForwardServer {
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
+    private NioForwardServer.Protocol protocol = NioForwardServer.Protocol.TCP;
+    private NioForwardServer.TlsVersion tlsVersion = NioForwardServer.TlsVersion.None;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -178,6 +180,16 @@ public interface ForwardServer {
       return this;
     }
 
+    public Builder protocol(NioForwardServer.Protocol value) {
+      protocol = value;
+      return this;
+    }
+
+    public Builder tlsVersion(NioForwardServer.TlsVersion value) {
+      tlsVersion = value;
+      return this;
+    }
+
     /**
      * Creates a new {@code ForwardServer}.
      *
@@ -196,7 +208,9 @@ public interface ForwardServer {
           receiveBufferSize,
           keepAliveEnabled,
           tcpNoDelayEnabled,
-          workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize
+          workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
+          protocol,
+          tlsVersion
       );
     }
   }

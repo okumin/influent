@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.LinkedList;
 
+import influent.internal.nio.NioChannel;
+import influent.internal.nio.NioSslChannel;
 import influent.internal.nio.NioTcpChannel;
 
 final class InfluentByteBuffer {
@@ -64,7 +66,7 @@ final class InfluentByteBuffer {
     trim();
   }
 
-  boolean feed(final NioTcpChannel channel) {
+  boolean feed(final NioChannel channel) {
     // TODO: optimization
     while (remaining < bufferSizeLimit) {
       final ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);

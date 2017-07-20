@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
+import influent.internal.nio.NioChannel;
+import influent.internal.nio.NioSslChannel;
 import org.msgpack.value.ImmutableValue;
 
 import influent.exception.InfluentIOException;
@@ -58,7 +60,7 @@ public final class MsgpackStreamUnpacker {
    * @throws InfluentIOException when it fails reading from the channel
    *                             or the chunk size exceeds the limit
    */
-  public void feed(final NioTcpChannel channel) {
+  public void feed(final NioChannel channel) {
     boolean toBeContinued = true;
     while (toBeContinued) {
       toBeContinued = buffer.feed(channel);
@@ -67,7 +69,7 @@ public final class MsgpackStreamUnpacker {
   }
 
   // fails when the chunk size exceeds the limit
-  private void unpack(final NioTcpChannel channel) {
+  private void unpack(final NioChannel channel) {
     while (buffer.hasRemaining()) {
       try {
         currentChunkSize += buffer.remaining();
@@ -108,4 +110,5 @@ public final class MsgpackStreamUnpacker {
   public ImmutableValue next() {
     return unpackedValues.remove();
   }
+
 }
