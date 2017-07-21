@@ -27,6 +27,23 @@ import java.util.concurrent.ThreadFactory;
  * A server which accepts requests of Fluentd's forward protocol.
  */
 public interface ForwardServer {
+  enum Protocol { TCP, TLS }
+  enum TlsVersion {
+    None("None"),
+    TLSv1_1("TLSv1.1"),
+    TLSv1_2("TLSv1.2");
+    private final String version;
+
+    TlsVersion(String s) {
+      version = s;
+    }
+
+    @Override
+    public String toString() {
+      return version;
+    }
+  }
+
   /**
    * A builder of {@code ForwardServer}.
    */
@@ -45,8 +62,8 @@ public interface ForwardServer {
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
-    private NioForwardServer.Protocol protocol = NioForwardServer.Protocol.TCP;
-    private NioForwardServer.TlsVersion tlsVersion = NioForwardServer.TlsVersion.None;
+    private Protocol protocol = Protocol.TCP;
+    private TlsVersion tlsVersion = TlsVersion.None;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -180,12 +197,12 @@ public interface ForwardServer {
       return this;
     }
 
-    public Builder protocol(NioForwardServer.Protocol value) {
+    public Builder protocol(Protocol value) {
       protocol = value;
       return this;
     }
 
-    public Builder tlsVersion(NioForwardServer.TlsVersion value) {
+    public Builder tlsVersion(TlsVersion value) {
       tlsVersion = value;
       return this;
     }

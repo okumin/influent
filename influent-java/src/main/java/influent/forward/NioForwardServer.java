@@ -54,23 +54,6 @@ import javax.net.ssl.X509TrustManager;
  * A {@code ForwardServer} implemented by NIO.
  */
 final class NioForwardServer implements ForwardServer {
-  public enum Protocol { TCP, TLS }
-  public enum TlsVersion {
-    None("None"),
-    TLSv1_1("TLSv1.1"),
-    TLSv1_2("TLSv1.2");
-
-    private final String version;
-
-    TlsVersion(String s) {
-      version = s;
-    }
-
-    @Override
-    public String toString() {
-      return version;
-    }
-  }
   private final NioEventLoop bossEventLoop;
   private final NioEventLoopPool workerEventLoopPool;
   private final Protocol protocol;
