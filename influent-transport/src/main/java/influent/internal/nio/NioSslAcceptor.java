@@ -102,6 +102,7 @@ public class NioSslAcceptor implements NioAttachment {
 
   private SocketChannel accept(SelectionKey key) {
     logger.debug("New connection request.");
+    logger.info("New connection request.");
     try {
       SocketChannel channel = ((ServerSocketChannel) key.channel()).accept();
       channel.configureBlocking(false);
@@ -115,8 +116,11 @@ public class NioSslAcceptor implements NioAttachment {
       } else {
         channel.close();
         logger.debug("Connection closed due to handshake failure.");
+        logger.info("Connection closed due to handshake failure.");
       }
     } catch (IOException e) {
+      logger.error(e.getLocalizedMessage());
+      e.printStackTrace();
       throw new InfluentIOException(e.getMessage(), e);
     }
     return null;
@@ -124,6 +128,7 @@ public class NioSslAcceptor implements NioAttachment {
 
   private boolean doHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
     logger.debug("Handshaking...");
+    logger.info("Handshaking...");
     SSLEngineResult result;
     SSLEngineResult.HandshakeStatus status;
     int bufferSize = engine.getSession().getApplicationBufferSize();
@@ -132,6 +137,7 @@ public class NioSslAcceptor implements NioAttachment {
     ByteBuffer wrappedBuffer = ByteBuffer.allocate(bufferSize);
 
     status = engine.getHandshakeStatus();
+    logger.info("{}", status);
     while (status != SSLEngineResult.HandshakeStatus.FINISHED &&
         status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
       switch (status) {
