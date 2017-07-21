@@ -10,6 +10,7 @@ import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -58,9 +59,10 @@ public class NioSslForwardConnection implements NioAttachment {
                           long chunkSizeLimit,
                           int sendBufferSize,
                           boolean keepAliveEnabled,
-                          boolean tcpNoDelayEnabled) {
+                          boolean tcpNoDelayEnabled,
+                          SSLContext context) {
     this(
-        new NioSslChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
+        new NioSslChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled, context),
         eventLoop,
         callback,
         chunkSizeLimit

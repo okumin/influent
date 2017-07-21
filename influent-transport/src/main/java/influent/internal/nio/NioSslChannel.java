@@ -5,6 +5,7 @@ import influent.internal.util.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -24,20 +25,22 @@ public class NioSslChannel implements NioChannel {
 
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
+  private final SSLContext context;
   private final SSLEngine engine;
-  private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
 
   public NioSslChannel(final SocketChannel channel) {
       this.channel = channel;
       this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
+      context = null;
       engine = null;
   }
 
   public NioSslChannel(final SocketChannel channel,
                        final int sendBufferSize,
                        final boolean keepAliveEnabled,
-                       final boolean tcpNoDelayEnabled) {
+                       final boolean tcpNoDelayEnabled,
+                       final SSLContext context) {
       this.channel = channel;
       this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
 
@@ -55,7 +58,9 @@ public class NioSslChannel implements NioChannel {
           closeChannel(channel);
           throw new InfluentIOException("An unexpected IO error occurred.", e);
       }
-      engine = null;
+      this.context = context;
+      engine = this.context.createSSLEngine();
+      engine.setUseClientMode(false);
   }
 
   /**
@@ -111,6 +116,7 @@ public class NioSslChannel implements NioChannel {
    * @throws InfluentIOException if some IO error occurs
    */
   public int read(final ByteBuffer dst) {
+    logger.debug("Start reading...");
     try {
       ByteBuffer wrapped = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
       final int readSize = channel.read(wrapped);

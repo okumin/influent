@@ -149,10 +149,10 @@ final class NioForwardServer implements ForwardServer {
         }
         final Consumer<SocketChannel> tlsChannelFactory = socketChannel -> new NioSslForwardConnection(
             socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
-            keepAliveEnabled, tcpNoDelayEnabled
+            keepAliveEnabled, tcpNoDelayEnabled, context
         );
         new NioSslAcceptor(
-            localAddress, bossEventLoop, tlsChannelFactory, backlog, receiveBufferSize
+            localAddress, bossEventLoop, tlsChannelFactory, backlog, receiveBufferSize, context
         );
         break;
       default:
