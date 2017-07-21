@@ -1,6 +1,7 @@
 package influent.internal.nio;
 
 import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +95,9 @@ public class NioSslAcceptor implements NioAttachment {
 
   @Override
   public void close() {
-
+    Exceptions.ignore(serverSocketChannel::close,
+        "The acceptor bound with " + localAddress + " closed.");
+    logger.info("The acceptor bound with {} closed.", localAddress);
   }
 
   private SocketChannel accept(SelectionKey key) {
