@@ -194,6 +194,7 @@ public class NioSslAcceptor implements NioAttachment {
           while ((task = engine.getDelegatedTask()) != null) {
             executor.execute(task);
           }
+          status = engine.getHandshakeStatus();
           break;
         case FINISHED:
           break;
