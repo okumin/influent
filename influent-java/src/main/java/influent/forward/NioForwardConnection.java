@@ -21,6 +21,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import influent.internal.nio.NioChannel;
+import influent.internal.nio.NioChannelFactory;
+import influent.internal.nio.NioChannelConfig;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
@@ -30,7 +33,6 @@ import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
-import influent.internal.nio.NioTcpChannel;
 import influent.internal.util.ThreadSafeQueue;
 
 /**
@@ -40,7 +42,7 @@ final class NioForwardConnection implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioForwardConnection.class);
   private static final String ACK_KEY = "ack";
 
-  private final NioTcpChannel channel;
+  private final NioChannel channel;
   private final NioEventLoop eventLoop;
   private final ForwardCallback callback;
   private final MsgpackStreamUnpacker unpacker;
@@ -48,7 +50,7 @@ final class NioForwardConnection implements NioAttachment {
 
   final ThreadSafeQueue<ByteBuffer> responses = new ThreadSafeQueue<>();
 
-  NioForwardConnection(final NioTcpChannel channel,
+  NioForwardConnection(final NioChannel channel,
                        final NioEventLoop eventLoop,
                        final ForwardCallback callback,
                        final MsgpackStreamUnpacker unpacker,
@@ -60,7 +62,7 @@ final class NioForwardConnection implements NioAttachment {
     this.decoder = decoder;
   }
 
-  NioForwardConnection(final NioTcpChannel channel,
+  NioForwardConnection(final NioChannel channel,
                        final NioEventLoop eventLoop,
                        final ForwardCallback callback,
                        final long chunkSizeLimit) {
@@ -92,9 +94,10 @@ final class NioForwardConnection implements NioAttachment {
                        final long chunkSizeLimit,
                        final int sendBufferSize,
                        final boolean keepAliveEnabled,
-                       final boolean tcpNoDelayEnabled) {
+                       final boolean tcpNoDelayEnabled,
+                       final NioChannelConfig sslConfig) {
     this(
-        new NioTcpChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
+        NioChannelFactory.create(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled, sslConfig),
         eventLoop,
         callback,
         chunkSizeLimit
