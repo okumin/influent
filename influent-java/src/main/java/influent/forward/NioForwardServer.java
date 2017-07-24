@@ -22,10 +22,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
+import influent.internal.nio.NioAcceptorFactory;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioChannelConfig;
-import influent.internal.nio.NioTcpAcceptor;
 
 import javax.net.ssl.SSLContext;
 
@@ -35,8 +35,7 @@ import javax.net.ssl.SSLContext;
 final class NioForwardServer implements ForwardServer {
   private final NioEventLoop bossEventLoop;
   private final NioEventLoopPool workerEventLoopPool;
-  private final NioChannelConfig sslConfig;
-  private SSLContext context = null;
+  private final NioChannelConfig channelConfig;
 
   /**
    * Creates a {@code NioForwardServer}.
@@ -66,7 +65,6 @@ final class NioForwardServer implements ForwardServer {
     this(localAddress, callback, chunkSizeLimit, backlog,
         sendBufferSize, receiveBufferSize, keepAliveEnabled, tcpNoDelayEnabled,
         workerPoolSize, new NioChannelConfig());
-    context = null;
   }
 
   NioForwardServer(final SocketAddress localAddress,
@@ -78,16 +76,16 @@ final class NioForwardServer implements ForwardServer {
                    final boolean keepAliveEnabled,
                    final boolean tcpNoDelayEnabled,
                    final int workerPoolSize,
-                   final NioChannelConfig sslConfig) {
+                   final NioChannelConfig channelConfig) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
-    this.sslConfig = sslConfig;
+    this.channelConfig = channelConfig;
     final Consumer<SocketChannel> tcpChannelFactory = socketChannel -> new NioForwardConnection(
         socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
-        keepAliveEnabled, tcpNoDelayEnabled, sslConfig
+        keepAliveEnabled, tcpNoDelayEnabled, channelConfig
     );
-    new NioTcpAcceptor(
-        localAddress, bossEventLoop, tcpChannelFactory, backlog, receiveBufferSize
+    NioAcceptorFactory.create(
+        localAddress, bossEventLoop, tcpChannelFactory, backlog, receiveBufferSize, channelConfig
     );
     new NioUdpHeartbeatServer(localAddress, bossEventLoop);
   }
