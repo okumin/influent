@@ -20,8 +20,13 @@ public class TLSPrint {
 
     final ForwardServer server =
         new ForwardServer.Builder(callback)
-            .protocol(ForwardServer.Protocol.TLS)
-            .tlsVersion(ForwardServer.TlsVersion.TLSv1_2)
+            .protocol("TLS")
+            .tlsVersion("TLSv1.2")
+            .keystorePath("/home/kenji/wc/influent/keystore.jks")
+            .keystorePassword("password")
+            .keyPassword("password")
+            .truststorePath("/home/kenji/wc/influent/keystore.jks")
+            .truststorePassword("password")
             .build();
     server.start();
 
