@@ -16,6 +16,8 @@
 
 package influent.forward;
 
+import influent.internal.nio.NioChannelConfig;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Objects;
@@ -27,23 +29,6 @@ import java.util.concurrent.ThreadFactory;
  * A server which accepts requests of Fluentd's forward protocol.
  */
 public interface ForwardServer {
-  enum Protocol { TCP, TLS }
-  enum TlsVersion {
-    None("None"),
-    TLSv1_1("TLSv1.1"),
-    TLSv1_2("TLSv1.2");
-    private final String version;
-
-    TlsVersion(String s) {
-      version = s;
-    }
-
-    @Override
-    public String toString() {
-      return version;
-    }
-  }
-
   /**
    * A builder of {@code ForwardServer}.
    */
@@ -62,8 +47,8 @@ public interface ForwardServer {
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
-    private Protocol protocol = Protocol.TCP;
-    private TlsVersion tlsVersion = TlsVersion.None;
+    private String protocol = "TCP";
+    private String tlsVersion = "TLS";
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -197,12 +182,12 @@ public interface ForwardServer {
       return this;
     }
 
-    public Builder protocol(Protocol value) {
+    public Builder protocol(String value) {
       protocol = value;
       return this;
     }
 
-    public Builder tlsVersion(TlsVersion value) {
+    public Builder tlsVersion(String value) {
       tlsVersion = value;
       return this;
     }
@@ -216,6 +201,9 @@ public interface ForwardServer {
      * @throws influent.exception.InfluentIOException if some IO error occurs
      */
     public ForwardServer build() {
+      NioChannelConfig sslConfig = new NioChannelConfig(
+
+      );
       return new NioForwardServer(
           localAddress,
           forwardCallback,
@@ -226,8 +214,7 @@ public interface ForwardServer {
           keepAliveEnabled,
           tcpNoDelayEnabled,
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
-          protocol,
-          tlsVersion
+          sslConfig
       );
     }
   }
