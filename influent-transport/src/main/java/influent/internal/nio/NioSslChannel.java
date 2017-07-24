@@ -5,7 +5,6 @@ import influent.internal.util.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -17,22 +16,19 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class NioSslChannel implements NioChannel {
   private static final Logger logger = LoggerFactory.getLogger(NioSslChannel.class);
 
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
-  private final SSLContext context;
+  private final NioChannelConfig sslConfig;
   private final SSLEngine engine;
-
 
   public NioSslChannel(final SocketChannel channel) {
       this.channel = channel;
       this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
-      context = null;
+      this.sslConfig = new NioChannelConfig();
       engine = null;
   }
 
@@ -40,9 +36,11 @@ public class NioSslChannel implements NioChannel {
                        final int sendBufferSize,
                        final boolean keepAliveEnabled,
                        final boolean tcpNoDelayEnabled,
-                       final SSLContext context) {
+                       final NioChannelConfig sslConfig) {
       this.channel = channel;
       this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
+      this.sslConfig = sslConfig;
+      engine = sslConfig.createSSLEngine();
 
       try {
           if (sendBufferSize > 0) {
@@ -58,9 +56,6 @@ public class NioSslChannel implements NioChannel {
           closeChannel(channel);
           throw new InfluentIOException("An unexpected IO error occurred.", e);
       }
-      this.context = context;
-      engine = this.context.createSSLEngine();
-      engine.setUseClientMode(false);
   }
 
   /**
