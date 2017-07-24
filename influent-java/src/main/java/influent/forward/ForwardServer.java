@@ -49,6 +49,11 @@ public interface ForwardServer {
     private int workerPoolSize = 0;
     private String protocol = "TCP";
     private String tlsVersion = "TLS";
+    private String keystorePath = null;
+    private String keystorePassword = null;
+    private String keyPassword = null;
+    private String truststorePath = null;
+    private String truststorePassword = null;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -192,6 +197,31 @@ public interface ForwardServer {
       return this;
     }
 
+    public Builder keystorePath(String value) {
+      keystorePath = value;
+      return this;
+    }
+
+    public Builder keystorePassword(String value) {
+      keystorePassword = value;
+      return this;
+    }
+
+    public Builder keyPassword(String value) {
+      keyPassword = value;
+      return this;
+    }
+
+    public Builder truststorePath(String value) {
+      truststorePath = value;
+      return this;
+    }
+
+    public Builder truststorePassword(String value) {
+      truststorePassword = value;
+      return this;
+    }
+
     /**
      * Creates a new {@code ForwardServer}.
      *
@@ -201,8 +231,11 @@ public interface ForwardServer {
      * @throws influent.exception.InfluentIOException if some IO error occurs
      */
     public ForwardServer build() {
-      NioChannelConfig sslConfig = new NioChannelConfig(
-
+      InetSocketAddress address = (InetSocketAddress) localAddress;
+      NioChannelConfig channelConfig = new NioChannelConfig(
+          address.getHostName(), address.getPort(), protocol, tlsVersion,
+          keystorePath, keystorePassword, keyPassword,
+          truststorePath, truststorePassword
       );
       return new NioForwardServer(
           localAddress,
@@ -214,7 +247,7 @@ public interface ForwardServer {
           keepAliveEnabled,
           tcpNoDelayEnabled,
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
-          sslConfig
+          channelConfig
       );
     }
   }

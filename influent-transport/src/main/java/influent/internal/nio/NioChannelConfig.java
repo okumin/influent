@@ -35,7 +35,7 @@ public class NioChannelConfig {
     }
   }
 
-  private boolean sslEnabled;
+  private boolean sslEnabled = false;
   private String host;
   private int port;
   private SSLContext context;
@@ -45,18 +45,21 @@ public class NioChannelConfig {
     context = null;
   }
 
-  public NioChannelConfig(String host, int port, String tlsVersion,
+  public NioChannelConfig(String host, int port, String protocol, String tlsVersion,
                           String keystorePath, String keystorePassword, String keyPassword,
                           String truststroePath, String truststrorePassword) {
     this.host = host;
     this.port = port;
     try {
-      context = SSLContext.getInstance("TLS");
-      context.init(
-          createKeyManagers(keystorePath, keystorePassword, keyPassword),
-          createTrustManagers(truststroePath, truststrorePassword),
-          new SecureRandom()
-      );
+      if (protocol.equals("TLS")) {
+        sslEnabled = true;
+        context = SSLContext.getInstance(tlsVersion);
+        context.init(
+            createKeyManagers(keystorePath, keystorePassword, keyPassword),
+            createTrustManagers(truststroePath, truststrorePassword),
+            new SecureRandom()
+        );
+      }
     } catch (NoSuchAlgorithmException e) {
       throw new AssertionError(e);
     } catch (KeyManagementException e) {

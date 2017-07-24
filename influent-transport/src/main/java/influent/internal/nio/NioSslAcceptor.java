@@ -30,7 +30,7 @@ public class NioSslAcceptor implements NioAttachment {
   private final SocketAddress localAddress;
   private final Consumer<SocketChannel> callback;
   private final ServerSocketChannel serverSocketChannel;
-  private final SSLContext context;
+  private final NioChannelConfig channelConfig;
 
   private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -42,11 +42,11 @@ public class NioSslAcceptor implements NioAttachment {
   NioSslAcceptor(final InetSocketAddress localAddress,
                  final Consumer<SocketChannel> callback,
                  final ServerSocketChannel serverSocketChannel,
-                 final SSLContext context) {
+                 final NioChannelConfig channelConfig) {
     this.localAddress = localAddress;
     this.callback = callback;
     this.serverSocketChannel = serverSocketChannel;
-    this.context = context;
+    this.channelConfig = channelConfig;
   }
 
   public NioSslAcceptor(final SocketAddress localAddress,
@@ -54,10 +54,10 @@ public class NioSslAcceptor implements NioAttachment {
                         final Consumer<SocketChannel> callback,
                         final int backlog,
                         final int receiveBufferSize,
-                        final SSLContext context) {
+                        final NioChannelConfig channelConfig) {
     this.localAddress = localAddress;
     this.callback = callback;
-    this.context = context;
+    this.channelConfig = channelConfig;
     try {
       serverSocketChannel = ServerSocketChannel.open();
       serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -107,8 +107,7 @@ public class NioSslAcceptor implements NioAttachment {
       SocketChannel channel = ((ServerSocketChannel) key.channel()).accept();
       channel.configureBlocking(false);
 
-      SSLEngine engine = context.createSSLEngine();
-      engine.setUseClientMode(false);
+      SSLEngine engine = channelConfig.createSSLEngine();
       engine.beginHandshake();
 
       if (doHandshake(channel, engine)) {
