@@ -49,6 +49,7 @@ public interface ForwardServer {
     private int workerPoolSize = 0;
     private String protocol = "TCP";
     private String tlsVersion = "TLS";
+    private String[] ciphers = null;
     private String keystorePath = null;
     private String keystorePassword = null;
     private String keyPassword = null;
@@ -210,6 +211,17 @@ public interface ForwardServer {
     }
 
     /**
+     * Set cipher suites.
+     *
+     * @param value the cipher suites
+     * @return this builder
+     */
+    public Builder ciphers(String[] value) {
+      ciphers = value;
+      return this;
+    }
+
+    /**
      * Set path for keystore.
      *
      * @param value path to keystore file.
@@ -275,7 +287,8 @@ public interface ForwardServer {
     public ForwardServer build() {
       InetSocketAddress address = (InetSocketAddress) localAddress;
       NioChannelConfig channelConfig = new NioChannelConfig(
-          address.getHostName(), address.getPort(), protocol, tlsVersion,
+          address.getHostName(), address.getPort(),
+          protocol, tlsVersion, ciphers,
           keystorePath, keystorePassword, keyPassword,
           truststorePath, truststorePassword
       );

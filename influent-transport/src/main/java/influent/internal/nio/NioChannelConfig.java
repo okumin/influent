@@ -38,6 +38,7 @@ public class NioChannelConfig {
   private boolean sslEnabled = false;
   private String host;
   private int port;
+  private String[] ciphers;
   private SSLContext context;
 
   public NioChannelConfig() {
@@ -45,11 +46,12 @@ public class NioChannelConfig {
     context = null;
   }
 
-  public NioChannelConfig(String host, int port, String protocol, String tlsVersion,
+  public NioChannelConfig(String host, int port, String protocol, String tlsVersion, String[] ciphers,
                           String keystorePath, String keystorePassword, String keyPassword,
                           String truststroePath, String truststrorePassword) {
     this.host = host;
     this.port = port;
+    this.ciphers = ciphers;
     try {
       if (protocol.equals("TLS")) {
         sslEnabled = true;
@@ -70,6 +72,9 @@ public class NioChannelConfig {
   public SSLEngine createSSLEngine() {
     SSLEngine engine = context.createSSLEngine(host, port);
     engine.setUseClientMode(false);
+    if (ciphers != null) {
+      engine.setEnabledCipherSuites(ciphers);
+    }
     // TODO configure engine
     return engine;
   }
