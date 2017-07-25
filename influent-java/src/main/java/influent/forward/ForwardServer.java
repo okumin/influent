@@ -193,7 +193,7 @@ public interface ForwardServer {
      * @param value the protocol type name. "TCP" or "TLS"
      * @return this builder
      */
-    public Builder protocol(String value) {
+    public Builder protocol(final String value) {
       protocol = value;
       return this;
     }
@@ -204,7 +204,7 @@ public interface ForwardServer {
      * @param value the TLS version. "TLS", "TLSv1", "TLSv1.1" or "TLSv1.2"
      * @return this builder
      */
-    public Builder tlsVersion(String value) {
+    public Builder tlsVersion(final String value) {
       tlsVersion = value;
       return this;
     }
@@ -215,7 +215,7 @@ public interface ForwardServer {
      * @param value path to keystore file.
      * @return this builder
      */
-    public Builder keystorePath(String value) {
+    public Builder keystorePath(final String value) {
       keystorePath = value;
       return this;
     }
@@ -226,7 +226,7 @@ public interface ForwardServer {
      * @param value password for keystore
      * @return this builder
      */
-    public Builder keystorePassword(String value) {
+    public Builder keystorePassword(final String value) {
       keystorePassword = value;
       return this;
     }
@@ -237,7 +237,7 @@ public interface ForwardServer {
      * @param value password for key.
      * @return this builder
      */
-    public Builder keyPassword(String value) {
+    public Builder keyPassword(final String value) {
       keyPassword = value;
       return this;
     }
@@ -248,7 +248,7 @@ public interface ForwardServer {
      * @param value path for keystore that stores trusted certs
      * @return this builder
      */
-    public Builder truststorePath(String value) {
+    public Builder truststorePath(final String value) {
       truststorePath = value;
       return this;
     }
@@ -259,7 +259,7 @@ public interface ForwardServer {
      * @param value password for keystore that stores trusted certs
      * @return this builder
      */
-    public Builder truststorePassword(String value) {
+    public Builder truststorePassword(final String value) {
       truststorePassword = value;
       return this;
     }
