@@ -21,7 +21,7 @@ public class TLSPrint {
     final ForwardServer server =
         new ForwardServer.Builder(callback)
             .protocol("TLS")
-            .tlsVersion("TLSv1.2")
+            .tlsVersions(new String[]{"TLSv1.2"})
             .keystorePath("/home/kenji/wc/influent/keystore.jks")
             .keystorePassword("password")
             .keyPassword("password")

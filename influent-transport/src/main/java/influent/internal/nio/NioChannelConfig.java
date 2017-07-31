@@ -18,9 +18,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
 public class NioChannelConfig {
-  public enum Protocol { TCP, TLS }
   public enum TlsVersion {
-    None("None"),
     TLSv1_1("TLSv1.1"),
     TLSv1_2("TLSv1.2");
     private final String version;
@@ -38,24 +36,27 @@ public class NioChannelConfig {
   private boolean sslEnabled = false;
   private String host;
   private int port;
+  private String[] tlsVersions;
   private String[] ciphers;
   private SSLContext context;
 
   public NioChannelConfig() {
     sslEnabled = false;
     context = null;
+    tlsVersions = null;
   }
 
-  public NioChannelConfig(String host, int port, String protocol, String tlsVersion, String[] ciphers,
+  public NioChannelConfig(String host, int port, String protocol, String[] tlsVersions, String[] ciphers,
                           String keystorePath, String keystorePassword, String keyPassword,
                           String truststroePath, String truststrorePassword) {
     this.host = host;
     this.port = port;
+    this.tlsVersions = tlsVersions;
     this.ciphers = ciphers;
     try {
       if (protocol.equals("TLS")) {
         sslEnabled = true;
-        context = SSLContext.getInstance(tlsVersion);
+        context = SSLContext.getInstance("TLS");
         context.init(
             createKeyManagers(keystorePath, keystorePassword, keyPassword),
             createTrustManagers(truststroePath, truststrorePassword),
@@ -72,6 +73,7 @@ public class NioChannelConfig {
   public SSLEngine createSSLEngine() {
     SSLEngine engine = context.createSSLEngine(host, port);
     engine.setUseClientMode(false);
+    engine.setEnabledProtocols(tlsVersions);
     if (ciphers != null) {
       engine.setEnabledCipherSuites(ciphers);
     }

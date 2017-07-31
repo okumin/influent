@@ -48,7 +48,7 @@ public interface ForwardServer {
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
     private String protocol = "TCP";
-    private String tlsVersion = "TLS";
+    private String[] tlsVersions = new String[]{"TLSv1.1", "TLSv1.2"};
     private String[] ciphers = null;
     private String keystorePath = null;
     private String keystorePassword = null;
@@ -200,13 +200,13 @@ public interface ForwardServer {
     }
 
     /**
-     * Set the TLS version.
+     * Set the TLS versions.
      *
-     * @param value the TLS version. "TLS", "TLSv1", "TLSv1.1" or "TLSv1.2"
+     * @param value the TLS versions. Available elements are "TLS", "TLSv1", "TLSv1.1" or "TLSv1.2"
      * @return this builder
      */
-    public Builder tlsVersion(final String value) {
-      tlsVersion = value;
+    public Builder tlsVersions(final String[] value) {
+      tlsVersions = value;
       return this;
     }
 
@@ -288,7 +288,7 @@ public interface ForwardServer {
       InetSocketAddress address = (InetSocketAddress) localAddress;
       NioChannelConfig channelConfig = new NioChannelConfig(
           address.getHostName(), address.getPort(),
-          protocol, tlsVersion, ciphers,
+          protocol, tlsVersions, ciphers,
           keystorePath, keystorePassword, keyPassword,
           truststorePath, truststorePassword
       );
