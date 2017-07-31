@@ -18,20 +18,6 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
 public class NioChannelConfig {
-  public enum TlsVersion {
-    TLSv1_1("TLSv1.1"),
-    TLSv1_2("TLSv1.2");
-    private final String version;
-
-    TlsVersion(String s) {
-      version = s;
-    }
-
-    @Override
-    public String toString() {
-      return version;
-    }
-  }
 
   private boolean sslEnabled = false;
   private String host;
