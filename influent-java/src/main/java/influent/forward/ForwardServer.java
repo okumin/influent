@@ -16,6 +16,8 @@
 
 package influent.forward;
 
+import influent.internal.nio.NioChannelConfig;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Objects;
@@ -45,6 +47,14 @@ public interface ForwardServer {
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
+    private boolean sslEnabled = false;
+    private String[] tlsVersions = new String[]{"TLSv1.1", "TLSv1.2"};
+    private String[] ciphers = null;
+    private String keystorePath = null;
+    private String keystorePassword = null;
+    private String keyPassword = null;
+    private String truststorePath = null;
+    private String truststorePassword = null;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -179,6 +189,94 @@ public interface ForwardServer {
     }
 
     /**
+     * Set SSL/TLS enabled or not.
+     *
+     * @param value If true, SSL/TLS is enabled.
+     * @return this builder
+     */
+    public Builder sslEnabled(final boolean value) {
+      sslEnabled = value;
+      return this;
+    }
+
+    /**
+     * Set the TLS versions.
+     *
+     * @param value the TLS versions. Available elements are "TLS", "TLSv1", "TLSv1.1" or "TLSv1.2"
+     * @return this builder
+     */
+    public Builder tlsVersions(final String[] value) {
+      tlsVersions = value;
+      return this;
+    }
+
+    /**
+     * Set cipher suites.
+     *
+     * @param value the cipher suites
+     * @return this builder
+     */
+    public Builder ciphers(String[] value) {
+      ciphers = value;
+      return this;
+    }
+
+    /**
+     * Set path for keystore.
+     *
+     * @param value path to keystore file.
+     * @return this builder
+     */
+    public Builder keystorePath(final String value) {
+      keystorePath = value;
+      return this;
+    }
+
+    /**
+     * Set password for keystore.
+     *
+     * @param value password for keystore
+     * @return this builder
+     */
+    public Builder keystorePassword(final String value) {
+      keystorePassword = value;
+      return this;
+    }
+
+    /**
+     * Set password for key.
+     *
+     * @param value password for key.
+     * @return this builder
+     */
+    public Builder keyPassword(final String value) {
+      keyPassword = value;
+      return this;
+    }
+
+    /**
+     * Set path for keystore that stores trusted certs.
+     *
+     * @param value path for keystore that stores trusted certs
+     * @return this builder
+     */
+    public Builder truststorePath(final String value) {
+      truststorePath = value;
+      return this;
+    }
+
+    /**
+     * Set password for keystore that stores trusted certs
+     *
+     * @param value password for keystore that stores trusted certs
+     * @return this builder
+     */
+    public Builder truststorePassword(final String value) {
+      truststorePassword = value;
+      return this;
+    }
+
+    /**
      * Creates a new {@code ForwardServer}.
      *
      * @return the new {@code ForwardServer}
@@ -187,6 +285,13 @@ public interface ForwardServer {
      * @throws influent.exception.InfluentIOException if some IO error occurs
      */
     public ForwardServer build() {
+      InetSocketAddress address = (InetSocketAddress) localAddress;
+      NioChannelConfig channelConfig = new NioChannelConfig(
+          address.getHostName(), address.getPort(),
+          sslEnabled, tlsVersions, ciphers,
+          keystorePath, keystorePassword, keyPassword,
+          truststorePath, truststorePassword
+      );
       return new NioForwardServer(
           localAddress,
           forwardCallback,
@@ -197,6 +302,7 @@ public interface ForwardServer {
           keepAliveEnabled,
           tcpNoDelayEnabled,
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize
+          // TODO Add channelConfig here
       );
     }
   }
