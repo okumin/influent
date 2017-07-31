@@ -31,13 +31,15 @@ import influent.internal.util.Exceptions;
 /**
  * A non-blocking mode {@code SocketChannel}.
  */
-public final class NioTcpChannel implements AutoCloseable {
+public final class NioTcpChannel implements NioChannel {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
+  private final NioChannelConfig sslConfig;
 
   NioTcpChannel(final SocketChannel channel) {
     this.channel = channel;
     this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
+    this.sslConfig = new NioChannelConfig();
   }
 
   /**
@@ -52,9 +54,11 @@ public final class NioTcpChannel implements AutoCloseable {
   public NioTcpChannel(final SocketChannel channel,
                        final int sendBufferSize,
                        final boolean keepAliveEnabled,
-                       final boolean tcpNoDelayEnabled) {
+                       final boolean tcpNoDelayEnabled,
+                       final NioChannelConfig sslConfig) {
     this.channel = channel;
     this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
+    this.sslConfig = sslConfig;
 
     try {
       if (sendBufferSize > 0) {
