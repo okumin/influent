@@ -47,7 +47,7 @@ public interface ForwardServer {
     private boolean keepAliveEnabled = true;
     private boolean tcpNoDelayEnabled = true;
     private int workerPoolSize = 0;
-    private String protocol = "TCP";
+    private boolean sslEnabled = false;
     private String[] tlsVersions = new String[]{"TLSv1.1", "TLSv1.2"};
     private String[] ciphers = null;
     private String keystorePath = null;
@@ -189,13 +189,13 @@ public interface ForwardServer {
     }
 
     /**
-     * Set the protocol.
+     * Set SSL/TLS enabled or not.
      *
-     * @param value the protocol type name. "TCP" or "TLS"
+     * @param value If true, SSL/TLS is enabled.
      * @return this builder
      */
-    public Builder protocol(final String value) {
-      protocol = value;
+    public Builder sslEnabled(final boolean value) {
+      sslEnabled = value;
       return this;
     }
 
@@ -288,7 +288,7 @@ public interface ForwardServer {
       InetSocketAddress address = (InetSocketAddress) localAddress;
       NioChannelConfig channelConfig = new NioChannelConfig(
           address.getHostName(), address.getPort(),
-          protocol, tlsVersions, ciphers,
+          sslEnabled, tlsVersions, ciphers,
           keystorePath, keystorePassword, keyPassword,
           truststorePath, truststorePassword
       );
