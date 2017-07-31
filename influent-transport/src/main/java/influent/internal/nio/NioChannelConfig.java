@@ -102,6 +102,9 @@ public class NioChannelConfig {
   }
 
   private TrustManager[] createTrustManagers(String filepath, String keystorePassword) {
+    if (filepath == null) {
+      return null;
+    }
     try {
       KeyStore trustStore = KeyStore.getInstance("JKS");
       InputStream trustStoreIS = new FileInputStream(filepath);
