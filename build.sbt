@@ -37,7 +37,7 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
 
 lazy val commonSettings = Seq(
   organization := "com.okumin",
-  version := "0.3.0",
+  version := "0.4.0-M1",
   scalaVersion := "2.11.11",
   fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
