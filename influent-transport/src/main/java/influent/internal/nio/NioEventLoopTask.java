@@ -26,6 +26,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntUnaryOperator;
 
 import org.slf4j.Logger;
@@ -141,7 +142,11 @@ interface NioEventLoopTask {
           if (key.isConnectable()) {
             attachment.onConnectable(key);
           }
+        } catch (final CancelledKeyException e) {
+          logger.debug("The key has already been cancelled.");
+          Exceptions.ignore(attachment::close, "Failed closing " + attachment);
         } catch (final Exception e) {
+          logger.debug("An error occurred when handling an event.", e);
           Exceptions.ignore(attachment::close, "Failed closing " + attachment);
         }
 

@@ -6,3 +6,4 @@ scala:
 jdk:
   - oraclejdk8
 
+sudo: true

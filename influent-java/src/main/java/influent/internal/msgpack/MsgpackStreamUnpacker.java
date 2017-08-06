@@ -16,9 +16,11 @@
 
 package influent.internal.msgpack;
 
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.function.Supplier;
 
 import org.msgpack.value.ImmutableValue;
 
@@ -54,14 +56,15 @@ public final class MsgpackStreamUnpacker {
   /**
    * Reads buffers from a {@code ReadableByteChannel}.
    *
+   * @param supplier supplier to produce ByteBuffer
    * @param channel channel
    * @throws InfluentIOException when it fails reading from the channel
    *                             or the chunk size exceeds the limit
    */
-  public void feed(final NioTcpChannel channel) {
+  public void feed(final Supplier<ByteBuffer> supplier, final NioTcpChannel channel) {
     boolean toBeContinued = true;
     while (toBeContinued) {
-      toBeContinued = buffer.feed(channel);
+      toBeContinued = buffer.feed(supplier);
       unpack(channel);
     }
   }
