@@ -143,7 +143,7 @@ class MsgpackStreamUnpackerSpec
           val supplier = new Supplier[ByteBuffer] {
             override def get(): ByteBuffer = {
               if (groupedBytes.hasNext) {
-                val buffer = ByteBuffer.allocate(1024 * 1024)
+                val buffer = ByteBuffer.allocate(1024 * 16)
                 buffer.put(groupedBytes.next()).flip()
                 buffer
               } else {
