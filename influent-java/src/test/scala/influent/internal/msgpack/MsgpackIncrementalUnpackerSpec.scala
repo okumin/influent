@@ -41,7 +41,7 @@ class MsgpackIncrementalUnpackerSpec extends WordSpec with GeneratorDrivenProper
           val chunks = asBytes.grouped(groupSize).toList
           chunks.init.foreach { bytes =>
             val buf = ByteBuffer.allocate(1024)
-            buf.put(bytes)
+            buf.put(bytes).flip()
             buffer.push(buf)
             val result = unpacker.unpack(buffer)
             assert(!result.isCompleted)
@@ -49,7 +49,7 @@ class MsgpackIncrementalUnpackerSpec extends WordSpec with GeneratorDrivenProper
           }
 
           val buf = ByteBuffer.allocate(1024)
-          buf.put(chunks.last)
+          buf.put(chunks.last).flip()
           buffer.push(buf)
 
           val actual = unpacker.unpack(buffer)

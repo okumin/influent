@@ -19,10 +19,8 @@ package influent.internal.msgpack
 import influent.exception.InfluentIOException
 import influent.internal.nio.NioTcpChannel
 import java.nio.ByteBuffer
-import org.mockito.AdditionalAnswers
-import org.mockito.ArgumentMatchers._
+import java.util.function.Supplier
 import org.mockito.Mockito._
-import org.mockito.stubbing.Answer1
 import org.msgpack.core.MessagePack
 import org.scalacheck.{Gen, Shrink}
 import org.scalatest.WordSpec
@@ -56,19 +54,20 @@ class MsgpackStreamUnpackerSpec
             packer.packArrayHeader(10)
             packer.toByteArray
           }
-          val stub = (chunks :+ extra).foldLeft(when(channel.read(any[ByteBuffer]))) {
-            (stub, chunk) =>
-              stub.thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-                override def answer(a: ByteBuffer): Int = {
-                  a.put(chunk)
-                  chunk.length
-                }
-              }))
+          val supplier = new Supplier[ByteBuffer] {
+            val iterator = (chunks :+ extra).map { bytes =>
+              val buffer = ByteBuffer.allocate(1024 * 1024)
+              buffer.put(bytes).flip()
+              buffer
+            }.toIterator
+
+            override def get(): ByteBuffer = {
+              if (iterator.hasNext) iterator.next() else null
+            }
           }
-          stub.thenReturn(0)
 
           val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-          assert(unpacker.feed(channel) === ())
+          assert(unpacker.feed(supplier, channel) === ())
 
           val values = (1 to messages.size).map { _ =>
             assert(unpacker.hasNext)
@@ -93,29 +92,32 @@ class MsgpackStreamUnpackerSpec
         bytes.splitAt(4)
       }
 
-      when(channel.read(any[ByteBuffer]))
-        .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-          override def answer(a: ByteBuffer): Int = {
-            a.put(packets._1)
-            packets._1.length
+      val supplier = new Supplier[ByteBuffer] {
+        var i = 0
+
+        override def get(): ByteBuffer = {
+          i += 1
+          i match {
+            case 1 =>
+              val buffer = ByteBuffer.allocate(1024 * 1024)
+              buffer.put(packets._1).flip()
+              buffer
+            case 2 | 4 => null
+            case 3 =>
+              val buffer = ByteBuffer.allocate(1024 * 1024)
+              buffer.put(packets._2).flip()
+              buffer
           }
-        }))
-        .thenReturn(0)
-        .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-          override def answer(a: ByteBuffer): Int = {
-            a.put(packets._2)
-            packets._2.length
-          }
-        }))
-        .thenReturn(0)
+        }
+      }
 
       val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-      assert(unpacker.feed(channel) === ())
+      assert(unpacker.feed(supplier, channel) === ())
 
       assert(!unpacker.hasNext)
       assertThrows[NoSuchElementException](unpacker.next())
 
-      assert(unpacker.feed(channel) === ())
+      assert(unpacker.feed(supplier, channel) === ())
       assert(unpacker.hasNext)
       assert(unpacker.next().asStringValue().asString() === message)
       verify(channel, never()).close()
@@ -138,21 +140,20 @@ class MsgpackStreamUnpackerSpec
           val groupedBytes = packer.toByteArray.grouped(groupSize)
 
           val channel = mock[NioTcpChannel]
-          when(channel.read(ByteBuffer.allocate(1024)))
-            .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-              override def answer(a: ByteBuffer): Int = {
-                if (groupedBytes.hasNext) {
-                  val bytes = groupedBytes.next()
-                  a.put(bytes)
-                  a.position()
-                } else {
-                  0
-                }
+          val supplier = new Supplier[ByteBuffer] {
+            override def get(): ByteBuffer = {
+              if (groupedBytes.hasNext) {
+                val buffer = ByteBuffer.allocate(1024 * 1024)
+                buffer.put(groupedBytes.next()).flip()
+                buffer
+              } else {
+                null
               }
-            }))
+            }
+          }
           val unpacker = new MsgpackStreamUnpacker(limit)
 
-          assert(unpacker.feed(channel) === ())
+          assert(unpacker.feed(supplier, channel) === ())
           strings.foreach { string =>
             assert(unpacker.hasNext)
             assert(unpacker.next().asStringValue().asString() === string)
@@ -170,34 +171,26 @@ class MsgpackStreamUnpackerSpec
       val groupedBytes = bytes.grouped(1024)
 
       val channel = mock[NioTcpChannel]
-      when(channel.read(ByteBuffer.allocate(1024)))
-        .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-          override def answer(a: ByteBuffer): Int = {
-            if (groupedBytes.hasNext) {
-              val bytes = groupedBytes.next()
-              a.put(bytes)
-              a.position()
-            } else {
-              0
-            }
+      val supplier = new Supplier[ByteBuffer] {
+        override def get(): ByteBuffer = {
+          if (groupedBytes.hasNext) {
+            val buffer = ByteBuffer.allocate(1024 * 1024)
+            buffer.put(groupedBytes.next()).flip()
+            buffer
+          } else {
+            null
           }
-        }))
+        }
+      }
       val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
 
-      assert(unpacker.feed(channel) === ())
+      assert(unpacker.feed(supplier, channel) === ())
       assert(unpacker.next().asStringValue().asString() === "1" * 65536)
       assert(!unpacker.hasNext)
       verify(channel, never()).close()
     }
 
     "fail with InfluentIOException" when {
-      "it fails reading" in {
-        val channel = mock[NioTcpChannel]
-        when(channel.read(ByteBuffer.allocate(1024))).thenThrow(new InfluentIOException())
-        val unpacker = new MsgpackStreamUnpacker(Int.MaxValue)
-        assertThrows[InfluentIOException](unpacker.feed(channel))
-      }
-
       "the chunk size exceeds the limit" in {
         val channel = mock[NioTcpChannel]
         val packer = MessagePack.newDefaultBufferPacker()
@@ -218,30 +211,29 @@ class MsgpackStreamUnpackerSpec
           bytes.slice(4055, 4056) // unconsumed
         )
 
-        when(channel.read(ByteBuffer.allocate(1024)))
-          .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-            override def answer(a: ByteBuffer): Int = {
-              if (queue.isEmpty) {
-                0
-              } else {
-                val bytes = queue.dequeue()
-                a.put(bytes)
-                a.position()
-              }
+        val supplier = new Supplier[ByteBuffer] {
+          override def get(): ByteBuffer = {
+            if (queue.isEmpty) {
+              null
+            } else {
+              val buffer = ByteBuffer.allocate(1024)
+              buffer.put(queue.dequeue()).flip()
+              if (buffer.hasRemaining) buffer else null
             }
-          }))
+          }
+        }
         val unpacker = new MsgpackStreamUnpacker(1024)
 
-        assert(unpacker.feed(channel) === ())
+        assert(unpacker.feed(supplier, channel) === ())
         assert(!unpacker.hasNext)
 
-        assert(unpacker.feed(channel) === ())
+        assert(unpacker.feed(supplier, channel) === ())
         assert(unpacker.next().asStringValue().asString() === "1" * 1000)
         assert(unpacker.next().asStringValue().asString() === "2" * 1001)
         assert(unpacker.next().asStringValue().asString() === "3" * 1021)
         assert(!unpacker.hasNext)
 
-        assertThrows[InfluentIOException](unpacker.feed(channel))
+        assertThrows[InfluentIOException](unpacker.feed(supplier, channel))
         assert(!unpacker.hasNext)
         verify(channel).close()
       }

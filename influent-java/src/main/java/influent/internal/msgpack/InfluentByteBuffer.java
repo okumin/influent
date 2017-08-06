@@ -19,12 +19,11 @@ package influent.internal.msgpack;
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.function.Supplier;
 
 import influent.internal.nio.NioTcpChannel;
 
 final class InfluentByteBuffer {
-  private static final int BUFFER_SIZE = 1024;
-
   private final Deque<ByteBuffer> buffers = new LinkedList<>();
   private long remaining = 0;
   private long bufferSizeLimit;
@@ -34,7 +33,6 @@ final class InfluentByteBuffer {
   }
 
   void push(final ByteBuffer buffer) {
-    buffer.flip();
     remaining += buffer.remaining();
     buffers.addLast(buffer.slice());
   }
@@ -64,12 +62,11 @@ final class InfluentByteBuffer {
     trim();
   }
 
-  boolean feed(final NioTcpChannel channel) {
+  boolean feed(final Supplier<ByteBuffer> supplier) {
     // TODO: optimization
     while (remaining < bufferSizeLimit) {
-      final ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-      final int readSize = channel.read(buffer);
-      if (readSize <= 0) {
+      final ByteBuffer buffer = supplier.get();
+      if (buffer == null) {
         return false;
       }
 

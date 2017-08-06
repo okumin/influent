@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.function.Supplier;
 
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
@@ -144,7 +145,17 @@ final class NioForwardConnection implements NioAttachment {
   }
 
   private void receiveRequests(final SelectionKey key) {
-    unpacker.feed(channel);
+    // TODO: optimize
+    final Supplier<ByteBuffer> supplier = () -> {
+      final ByteBuffer buffer = ByteBuffer.allocate(1024);
+      final int bytes = channel.read(buffer);
+      if (bytes <= 0) {
+        return null;
+      }
+      buffer.flip();
+      return buffer;
+    };
+    unpacker.feed(supplier, channel);
     while (unpacker.hasNext()) {
       try {
         decoder.decode(unpacker.next()).ifPresent(result -> {

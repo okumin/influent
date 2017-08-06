@@ -26,9 +26,11 @@ import java.nio.channels.SelectionKey
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
-import org.mockito.AdditionalAnswers
+import java.util.function.Supplier
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.stubbing.Answer1
+import org.mockito.{AdditionalAnswers, ArgumentMatchers}
 import org.msgpack.core.MessagePack
 import org.msgpack.value.impl.ImmutableStringValueImpl
 import org.scalatest.WordSpec
@@ -351,7 +353,8 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val callback = mock[ForwardCallback]
         val channel = mock[NioTcpChannel]
         val unpacker = mock[MsgpackStreamUnpacker]
-        when(unpacker.feed(channel)).thenThrow(new InfluentIOException())
+        when(unpacker.feed(any[Supplier[ByteBuffer]], ArgumentMatchers.eq[NioTcpChannel](channel)))
+          .thenThrow(new InfluentIOException())
         val connection = new NioForwardConnection(
           channel, mock[NioEventLoop], callback, unpacker, mock[MsgpackForwardRequestDecoder]
         )
