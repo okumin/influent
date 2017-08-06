@@ -38,7 +38,7 @@ public class TLSPrint {
     final ForwardServer server =
         new ForwardServer.Builder(callback)
             .sslEnabled(true)
-            .tlsVersions(new String[]{"TLSv1.2"})
+            .tlsVersions("TLSv1.2")
             .keystorePath("./out/influent-server.jks")
             .keystorePassword("password")
             .keyPassword("password")

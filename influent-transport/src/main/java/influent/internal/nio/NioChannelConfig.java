@@ -31,6 +31,9 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+
+import influent.exception.InfluentIOException;
 
 public class NioChannelConfig {
 
@@ -78,6 +81,11 @@ public class NioChannelConfig {
     engine.setEnabledProtocols(tlsVersions);
     if (ciphers != null) {
       engine.setEnabledCipherSuites(ciphers);
+    }
+    try {
+      engine.beginHandshake();
+    } catch (final SSLException e) {
+      throw new InfluentIOException("Failed beginning a handshake.", e);
     }
     // TODO configure engine
     return engine;
