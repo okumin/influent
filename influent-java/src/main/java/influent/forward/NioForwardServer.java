@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
+import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioTcpAcceptor;
@@ -57,13 +58,22 @@ final class NioForwardServer implements ForwardServer {
                    final int receiveBufferSize,
                    final boolean keepAliveEnabled,
                    final boolean tcpNoDelayEnabled,
-                   final int workerPoolSize) {
+                   final int workerPoolSize,
+                   final NioChannelConfig channelConfig) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
-    final Consumer<SocketChannel> channelFactory = socketChannel -> new NioForwardConnection(
-        socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, sendBufferSize,
-        keepAliveEnabled, tcpNoDelayEnabled
-    );
+    final Consumer<SocketChannel> channelFactory;
+    if (channelConfig.isSslEnabled()) {
+      channelFactory = socketChannel -> new NioSslForwardConnection(
+          socketChannel, workerEventLoopPool.next(), callback, channelConfig.createSSLEngine(),
+          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled
+      );
+    } else {
+      channelFactory = socketChannel -> new NioForwardConnection(
+          socketChannel, workerEventLoopPool.next(), callback,
+          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled
+      );
+    }
     new NioTcpAcceptor(
         localAddress, bossEventLoop, channelFactory, backlog, receiveBufferSize
     );

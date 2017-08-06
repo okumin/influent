@@ -203,7 +203,7 @@ public interface ForwardServer {
      * @param value the TLS versions. Available elements are "TLS", "TLSv1", "TLSv1.1" or "TLSv1.2"
      * @return this builder
      */
-    public Builder tlsVersions(final String[] value) {
+    public Builder tlsVersions(final String... value) {
       tlsVersions = value;
       return this;
     }
@@ -276,8 +276,8 @@ public interface ForwardServer {
           receiveBufferSize,
           keepAliveEnabled,
           tcpNoDelayEnabled,
-          workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize
-          // TODO Add channelConfig here
+          workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
+          channelConfig
       );
     }
   }
