@@ -16,14 +16,14 @@
 
 package influent.forward;
 
-import influent.internal.nio.NioChannelConfig;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+
+import influent.internal.nio.NioChannelConfig;
 
 /**
  * A server which accepts requests of Fluentd's forward protocol.
@@ -53,8 +53,6 @@ public interface ForwardServer {
     private String keystorePath = null;
     private String keystorePassword = null;
     private String keyPassword = null;
-    private String truststorePath = null;
-    private String truststorePassword = null;
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -216,7 +214,7 @@ public interface ForwardServer {
      * @param value the cipher suites
      * @return this builder
      */
-    public Builder ciphers(String[] value) {
+    public Builder ciphers(final String[] value) {
       ciphers = value;
       return this;
     }
@@ -255,28 +253,6 @@ public interface ForwardServer {
     }
 
     /**
-     * Set path for keystore that stores trusted certs.
-     *
-     * @param value path for keystore that stores trusted certs
-     * @return this builder
-     */
-    public Builder truststorePath(final String value) {
-      truststorePath = value;
-      return this;
-    }
-
-    /**
-     * Set password for keystore that stores trusted certs
-     *
-     * @param value password for keystore that stores trusted certs
-     * @return this builder
-     */
-    public Builder truststorePassword(final String value) {
-      truststorePassword = value;
-      return this;
-    }
-
-    /**
      * Creates a new {@code ForwardServer}.
      *
      * @return the new {@code ForwardServer}
@@ -285,12 +261,11 @@ public interface ForwardServer {
      * @throws influent.exception.InfluentIOException if some IO error occurs
      */
     public ForwardServer build() {
-      InetSocketAddress address = (InetSocketAddress) localAddress;
-      NioChannelConfig channelConfig = new NioChannelConfig(
+      final InetSocketAddress address = (InetSocketAddress) localAddress;
+      final NioChannelConfig channelConfig = new NioChannelConfig(
           address.getHostName(), address.getPort(),
           sslEnabled, tlsVersions, ciphers,
-          keystorePath, keystorePassword, keyPassword,
-          truststorePath, truststorePassword
+          keystorePath, keystorePassword, keyPassword
       );
       return new NioForwardServer(
           localAddress,
