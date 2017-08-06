@@ -37,7 +37,7 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
 
 lazy val commonSettings = Seq(
   organization := "com.okumin",
-  version := "0.3.0",
+  version := "0.4.0-M1",
   scalaVersion := "2.11.11",
   fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
@@ -45,8 +45,8 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.25",
     "org.mockito" % "mockito-core" % "2.8.47" % "test",
-    "org.scalatest" % "scalatest_2.11" % "3.0.1" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+    "org.scalatest" % "scalatest_2.11" % "3.0.3" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.13.5" % "test"
   ),
   // sbt-header settings
   organizationName := "okumin",
