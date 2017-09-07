@@ -59,7 +59,8 @@ final class NioForwardServer implements ForwardServer {
                    final boolean keepAliveEnabled,
                    final boolean tcpNoDelayEnabled,
                    final int workerPoolSize,
-                   final NioChannelConfig channelConfig) {
+                   final NioChannelConfig channelConfig,
+                   final ForwardSecurity security) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
     final Consumer<SocketChannel> channelFactory;
@@ -71,7 +72,7 @@ final class NioForwardServer implements ForwardServer {
     } else {
       channelFactory = socketChannel -> new NioForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback,
-          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled
+          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled, security
       );
     }
     new NioTcpAcceptor(

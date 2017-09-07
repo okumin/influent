@@ -53,6 +53,7 @@ public interface ForwardServer {
     private String keystorePath = null;
     private String keystorePassword = null;
     private String keyPassword = null;
+    private ForwardSecurity security = new ForwardSecurity();
 
     /**
      * Constructs a new {@code ForwardServer.Builder}.
@@ -252,6 +253,11 @@ public interface ForwardServer {
       return this;
     }
 
+    public Builder security(final ForwardSecurity value) {
+      security = value;
+      return this;
+    }
+
     /**
      * Creates a new {@code ForwardServer}.
      *
@@ -277,7 +283,8 @@ public interface ForwardServer {
           keepAliveEnabled,
           tcpNoDelayEnabled,
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
-          channelConfig
+          channelConfig,
+          security
       );
     }
   }
