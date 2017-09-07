@@ -45,6 +45,7 @@ final class NioForwardServer implements ForwardServer {
    * @param keepAliveEnabled whether SO_KEEPALIVE is enabled or not
    * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
    * @param workerPoolSize the event loop pool size for workers
+   * @param channelConfig the channel configuration
    * @throws IllegalArgumentException if any of parameter is invalid
    *                                  e.g. the local address is already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
