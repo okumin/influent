@@ -17,7 +17,6 @@
 package influent.forward;
 
 import java.util.Objects;
-
 import influent.EventStream;
 
 final class ForwardRequest {
@@ -50,8 +49,8 @@ final class ForwardRequest {
       return false;
     }
     final ForwardRequest that = (ForwardRequest) o;
-    return Objects.equals(getStream(), that.getStream()) &&
-        Objects.equals(getOption(), that.getOption());
+    return Objects.equals(getStream(), that.getStream())
+        && Objects.equals(getOption(), that.getOption());
   }
 
   @Override

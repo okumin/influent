@@ -20,10 +20,8 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioUdpChannel;
@@ -46,8 +44,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   private final NioEventLoop eventLoop;
   private final NioUdpChannel channel;
 
-  NioUdpHeartbeatServer(final NioUdpChannel channel,
-                        final NioEventLoop eventLoop) {
+  NioUdpHeartbeatServer(final NioUdpChannel channel, final NioEventLoop eventLoop) {
     this.eventLoop = eventLoop;
     this.channel = channel;
   }
@@ -60,8 +57,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
    */
-  NioUdpHeartbeatServer(final SocketAddress localAddress,
-                        final NioEventLoop eventLoop) {
+  NioUdpHeartbeatServer(final SocketAddress localAddress, final NioEventLoop eventLoop) {
     this(new NioUdpChannel(localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE), eventLoop);
     channel.register(eventLoop, SelectionKey.OP_READ, this);
   }

@@ -21,12 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
-
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
@@ -49,11 +47,9 @@ final class NioForwardConnection implements NioAttachment {
 
   final ThreadSafeQueue<ByteBuffer> responses = new ThreadSafeQueue<>();
 
-  NioForwardConnection(final NioTcpChannel channel,
-                       final NioEventLoop eventLoop,
-                       final ForwardCallback callback,
-                       final MsgpackStreamUnpacker unpacker,
-                       final MsgpackForwardRequestDecoder decoder) {
+  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
+      final ForwardCallback callback, final MsgpackStreamUnpacker unpacker,
+      final MsgpackForwardRequestDecoder decoder) {
     this.channel = channel;
     this.eventLoop = eventLoop;
     this.callback = callback;
@@ -61,17 +57,10 @@ final class NioForwardConnection implements NioAttachment {
     this.decoder = decoder;
   }
 
-  NioForwardConnection(final NioTcpChannel channel,
-                       final NioEventLoop eventLoop,
-                       final ForwardCallback callback,
-                       final long chunkSizeLimit) {
-    this(
-        channel,
-        eventLoop,
-        callback,
-        new MsgpackStreamUnpacker(chunkSizeLimit),
-        new MsgpackForwardRequestDecoder()
-    );
+  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
+      final ForwardCallback callback, final long chunkSizeLimit) {
+    this(channel, eventLoop, callback, new MsgpackStreamUnpacker(chunkSizeLimit),
+        new MsgpackForwardRequestDecoder());
   }
 
   /**
@@ -87,19 +76,11 @@ final class NioForwardConnection implements NioAttachment {
    * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
    * @throws InfluentIOException if some IO error occurs
    */
-  NioForwardConnection(final SocketChannel socketChannel,
-                       final NioEventLoop eventLoop,
-                       final ForwardCallback callback,
-                       final long chunkSizeLimit,
-                       final int sendBufferSize,
-                       final boolean keepAliveEnabled,
-                       final boolean tcpNoDelayEnabled) {
-    this(
-        new NioTcpChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
-        eventLoop,
-        callback,
-        chunkSizeLimit
-    );
+  NioForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
+      final ForwardCallback callback, final long chunkSizeLimit, final int sendBufferSize,
+      final boolean keepAliveEnabled, final boolean tcpNoDelayEnabled) {
+    this(new NioTcpChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
+        eventLoop, callback, chunkSizeLimit);
 
     channel.register(eventLoop, SelectionKey.OP_READ, this);
   }

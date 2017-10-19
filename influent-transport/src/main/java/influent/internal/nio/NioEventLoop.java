@@ -24,10 +24,8 @@ import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 import influent.internal.util.Futures;
@@ -40,7 +38,9 @@ import influent.internal.util.ThreadSafeQueue;
  * {@code NioEventLoop#run} is expected to be executed on one exclusive thread.
  */
 public final class NioEventLoop implements Runnable {
-  private enum State { IDLE, ACTIVE, STOPPING, TERMINATED }
+  private enum State {
+    IDLE, ACTIVE, STOPPING, TERMINATED
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
 
@@ -108,9 +108,8 @@ public final class NioEventLoop implements Runnable {
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final SelectableChannel channel,
-                       final int ops,
-                       final NioAttachment attachment) {
+  public void register(final SelectableChannel channel, final int ops,
+      final NioAttachment attachment) {
     addTask(new NioEventLoopTask.Register(selector, channel, ops, attachment));
   }
 

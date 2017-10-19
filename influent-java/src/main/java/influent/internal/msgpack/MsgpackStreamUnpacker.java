@@ -21,9 +21,7 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.function.Supplier;
-
 import org.msgpack.value.ImmutableValue;
-
 import influent.exception.InfluentIOException;
 import influent.internal.nio.NioTcpChannel;
 

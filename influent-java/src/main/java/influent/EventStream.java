@@ -73,8 +73,8 @@ public final class EventStream {
       return false;
     }
     final EventStream that = (EventStream) o;
-    return Objects.equals(getTag(), that.getTag()) &&
-        Objects.equals(getEntries(), that.getEntries());
+    return Objects.equals(getTag(), that.getTag())
+        && Objects.equals(getEntries(), that.getEntries());
   }
 
   /**

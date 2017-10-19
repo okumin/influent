@@ -28,10 +28,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntUnaryOperator;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.internal.util.Exceptions;
 
 /**
@@ -49,10 +47,8 @@ interface NioEventLoopTask {
     private final int ops;
     private final NioAttachment attachment;
 
-    Register(final Selector selector,
-             final SelectableChannel channel,
-             final int ops,
-             final NioAttachment attachment) {
+    Register(final Selector selector, final SelectableChannel channel, final int ops,
+        final NioAttachment attachment) {
       this.selector = selector;
       this.channel = channel;
       this.ops = ops;
@@ -63,8 +59,7 @@ interface NioEventLoopTask {
     public void run() {
       try {
         channel.configureBlocking(false).register(selector, ops, attachment);
-      } catch (final ClosedSelectorException
-          | IllegalBlockingModeException
+      } catch (final ClosedSelectorException | IllegalBlockingModeException
           | IllegalSelectorException e) {
         throw new AssertionError(e);
       } catch (final CancelledKeyException | IllegalArgumentException | IOException e) {

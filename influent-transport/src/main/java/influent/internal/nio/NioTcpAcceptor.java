@@ -28,10 +28,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.function.Consumer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
@@ -47,9 +45,8 @@ public final class NioTcpAcceptor implements NioAttachment {
   private final Consumer<SocketChannel> callback;
   private final ServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final SocketAddress localAddress,
-                 final Consumer<SocketChannel> callback,
-                 final ServerSocketChannel serverSocketChannel) {
+  NioTcpAcceptor(final SocketAddress localAddress, final Consumer<SocketChannel> callback,
+      final ServerSocketChannel serverSocketChannel) {
     this.localAddress = localAddress;
     this.callback = callback;
     this.serverSocketChannel = serverSocketChannel;
@@ -66,11 +63,8 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws IllegalArgumentException if the given local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioTcpAcceptor(final SocketAddress localAddress,
-                        final NioEventLoop eventLoop,
-                        final Consumer<SocketChannel> callback,
-                        final int backlog,
-                        final int receiveBufferSize) {
+  public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
+      final Consumer<SocketChannel> callback, final int backlog, final int receiveBufferSize) {
     this.localAddress = localAddress;
     this.callback = callback;
     try {
@@ -78,16 +72,13 @@ public final class NioTcpAcceptor implements NioAttachment {
       serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
       serverSocketChannel.bind(this.localAddress, backlog);
       if (receiveBufferSize > 0) {
-        serverSocketChannel
-            .setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
+        serverSocketChannel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
       }
       eventLoop.register(serverSocketChannel, SelectionKey.OP_ACCEPT, this);
       logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
     } catch (final AlreadyBoundException | UnsupportedAddressTypeException e) {
       throw new IllegalArgumentException(e);
-    } catch (final ClosedChannelException
-        | SecurityException
-        | UnsupportedOperationException
+    } catch (final ClosedChannelException | SecurityException | UnsupportedOperationException
         | IllegalArgumentException e) {
       throw new AssertionError(e);
     } catch (final IOException e) {

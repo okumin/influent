@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.function.Supplier;
-
 import influent.internal.nio.NioTcpChannel;
 
 final class InfluentByteBuffer {
