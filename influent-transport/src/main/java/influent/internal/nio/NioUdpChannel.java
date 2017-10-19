@@ -25,10 +25,8 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
@@ -55,9 +53,8 @@ public final class NioUdpChannel implements AutoCloseable {
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioUdpChannel(final SocketAddress localAddress,
-                       final int sendBufferSize,
-                       final int receiveBufferSize) {
+  public NioUdpChannel(final SocketAddress localAddress, final int sendBufferSize,
+      final int receiveBufferSize) {
     this.localAddress = localAddress;
 
     try {
@@ -134,9 +131,7 @@ public final class NioUdpChannel implements AutoCloseable {
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop,
-                       final int ops,
-                       final NioAttachment attachment) {
+  public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
     eventLoop.register(channel, ops, attachment);
   }
 

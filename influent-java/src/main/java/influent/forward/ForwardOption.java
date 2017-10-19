@@ -55,8 +55,8 @@ final class ForwardOption {
       return false;
     }
     final ForwardOption that = (ForwardOption) o;
-    return Objects.equals(getChunk(), that.getChunk()) &&
-        Objects.equals(getCompressed(), that.getCompressed());
+    return Objects.equals(getChunk(), that.getChunk())
+        && Objects.equals(getCompressed(), that.getCompressed());
   }
 
   @Override

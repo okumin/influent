@@ -18,7 +18,6 @@ package influent;
 
 import java.time.Instant;
 import java.util.Objects;
-
 import org.msgpack.value.ImmutableMapValue;
 
 /**
@@ -74,8 +73,8 @@ public final class EventEntry {
       return false;
     }
     final EventEntry that = (EventEntry) o;
-    return Objects.equals(getTime(), that.getTime()) &&
-        Objects.equals(getRecord(), that.getRecord());
+    return Objects.equals(getTime(), that.getTime())
+        && Objects.equals(getRecord(), that.getRecord());
   }
 
   /**

@@ -26,13 +26,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
-
 import influent.exception.InfluentIOException;
 
 public class NioChannelConfig {
@@ -51,9 +49,8 @@ public class NioChannelConfig {
   }
 
   public NioChannelConfig(final String host, final int port, final boolean sslEnabled,
-                          final String[] tlsVersions, final String[] ciphers,
-                          final String keystorePath, final String keystorePassword,
-                          final String keyPassword) {
+      final String[] tlsVersions, final String[] ciphers, final String keystorePath,
+      final String keystorePassword, final String keyPassword) {
     this.host = host;
     this.port = port;
     this.sslEnabled = sslEnabled;
@@ -62,11 +59,8 @@ public class NioChannelConfig {
     try {
       if (isSslEnabled()) {
         context = SSLContext.getInstance("TLS");
-        context.init(
-            createKeyManagers(keystorePath, keystorePassword, keyPassword),
-            null,
-            new SecureRandom()
-        );
+        context.init(createKeyManagers(keystorePath, keystorePassword, keyPassword), null,
+            new SecureRandom());
       }
     } catch (final NoSuchAlgorithmException e) {
       throw new AssertionError(e);
@@ -91,21 +85,21 @@ public class NioChannelConfig {
     return engine;
   }
 
-  private KeyManager[] createKeyManagers(final String filepath,
-                                         final String keystorePassword,
-                                         final String keyPassword) {
+  private KeyManager[] createKeyManagers(final String filepath, final String keystorePassword,
+      final String keyPassword) {
     try {
       final KeyStore keyStore = KeyStore.getInstance("JKS");
       try (InputStream keyStoreIS = new FileInputStream(filepath)) {
         keyStore.load(keyStoreIS, keystorePassword.toCharArray());
       }
-      final KeyManagerFactory kmf = KeyManagerFactory
-          .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      final KeyManagerFactory kmf =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
       kmf.init(keyStore, keyPassword.toCharArray());
       return kmf.getKeyManagers();
     } catch (final IOException e) {
       e.printStackTrace();
-    } catch (final CertificateException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException e) {
+    } catch (final CertificateException | UnrecoverableKeyException | NoSuchAlgorithmException
+        | KeyStoreException e) {
       e.printStackTrace();
     }
     return null;

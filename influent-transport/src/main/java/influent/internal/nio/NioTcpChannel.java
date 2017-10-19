@@ -24,7 +24,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
@@ -128,9 +127,7 @@ public final class NioTcpChannel implements AutoCloseable {
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop,
-                       final int ops,
-                       final NioAttachment attachment) {
+  public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
     eventLoop.register(channel, ops, attachment);
   }
 
