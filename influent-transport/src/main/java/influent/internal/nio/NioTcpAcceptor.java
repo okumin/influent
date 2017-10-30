@@ -27,6 +27,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +43,10 @@ public final class NioTcpAcceptor implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpAcceptor.class);
 
   private final SocketAddress localAddress;
-  private final Consumer<SocketChannel> callback;
+  private final BiConsumer<SelectionKey, SocketChannel> callback;
   private final ServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final SocketAddress localAddress, final Consumer<SocketChannel> callback,
+  NioTcpAcceptor(final SocketAddress localAddress, final BiConsumer<SelectionKey, SocketChannel> callback,
       final ServerSocketChannel serverSocketChannel) {
     this.localAddress = localAddress;
     this.callback = callback;
@@ -64,7 +65,7 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws InfluentIOException if some IO error occurs
    */
   public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
-      final Consumer<SocketChannel> callback, final int backlog, final int receiveBufferSize) {
+      final BiConsumer<SelectionKey, SocketChannel> callback, final int backlog, final int receiveBufferSize) {
     this.localAddress = localAddress;
     this.callback = callback;
     try {
@@ -101,7 +102,7 @@ public final class NioTcpAcceptor implements NioAttachment {
         if (channel == null) {
           break;
         }
-        callback.accept(channel);
+        callback.accept(key, channel);
       } catch (final Exception e) {
         logger.error("NioTcpAcceptor failed accepting.", e);
       }
