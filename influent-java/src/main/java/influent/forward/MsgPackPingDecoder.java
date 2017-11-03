@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 okumin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package influent.forward;
 
 import org.msgpack.value.ImmutableArrayValue;
@@ -5,7 +21,6 @@ import org.msgpack.value.ImmutableValue;
 import org.msgpack.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -17,10 +32,8 @@ final class MsgPackPingDecoder {
   private final byte[] nonce;
   private final byte[] userAuth;
 
-  public MsgPackPingDecoder(ForwardSecurity security,
-                            ForwardClientNode node,
-                            byte[] nonce,
-                            byte[] userAuth) {
+  public MsgPackPingDecoder(ForwardSecurity security, ForwardClientNode node, byte[] nonce,
+      byte[] userAuth) {
     this.security = security;
     this.node = node;
     this.nonce = nonce;
@@ -100,7 +113,7 @@ final class MsgPackPingDecoder {
 
   private String generateHexString(final byte[] digest) {
     StringBuilder sb = new StringBuilder();
-    for (byte b: digest) {
+    for (byte b : digest) {
       sb.append(String.format("%02x", b));
     }
     return sb.toString();
@@ -110,9 +123,8 @@ final class MsgPackPingDecoder {
     throw new IllegalArgumentException(message + " value = " + value);
   }
 
-  private IllegalArgumentException error(final String message,
-                                         final Value value,
-                                         final Throwable cause) {
+  private IllegalArgumentException error(final String message, final Value value,
+      final Throwable cause) {
     throw new IllegalArgumentException(message + " value = " + value, cause);
   }
 }
