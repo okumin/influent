@@ -27,7 +27,6 @@ import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
@@ -60,7 +59,9 @@ final class NioForwardConnection implements NioAttachment {
   private final byte[] nonce = new byte[16];
   private final byte[] userAuth = new byte[16];
 
-  enum ConnectionState { HELO, PINGPONG, ESTABLISHED }
+  enum ConnectionState {
+    HELO, PINGPONG, ESTABLISHED
+  }
 
   private ConnectionState state;
 
@@ -77,8 +78,7 @@ final class NioForwardConnection implements NioAttachment {
   }
 
   NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final long chunkSizeLimit,
-      final ForwardSecurity security) {
+      final ForwardCallback callback, final long chunkSizeLimit, final ForwardSecurity security) {
     this(channel, eventLoop, callback, new MsgpackStreamUnpacker(chunkSizeLimit),
         new MsgpackForwardRequestDecoder(), security);
   }
@@ -98,7 +98,8 @@ final class NioForwardConnection implements NioAttachment {
    */
   NioForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final long chunkSizeLimit, final int sendBufferSize,
-      final boolean keepAliveEnabled, final boolean tcpNoDelayEnabled, final ForwardSecurity security) {
+      final boolean keepAliveEnabled, final boolean tcpNoDelayEnabled,
+      final ForwardSecurity security) {
     this(new NioTcpChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
         eventLoop, callback, chunkSizeLimit, security);
 
@@ -260,17 +261,9 @@ final class NioForwardConnection implements NioAttachment {
     // ['HELO', {'nonce' => nonce, 'auth' => user_auth_salt/empty string, 'keepalive' => true/false}].to_msgpack
     MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
     try {
-      packer.packArrayHeader(2)
-          .packString("HELO")
-          .packMapHeader(3)
-          .packString("nonce")
-          .packBinaryHeader(16)
-          .writePayload(nonce)
-          .packString("auth")
-          .packBinaryHeader(16)
-          .writePayload(userAuth)
-          .packString("keepalive")
-          .packBoolean(true);
+      packer.packArrayHeader(2).packString("HELO").packMapHeader(3).packString("nonce")
+          .packBinaryHeader(16).writePayload(nonce).packString("auth").packBinaryHeader(16)
+          .writePayload(userAuth).packString("keepalive").packBoolean(true);
     } catch (IOException e) {
       logger.error("Failed to pack HELO message", e);
     }
@@ -294,19 +287,12 @@ final class NioForwardConnection implements NioAttachment {
         md.update(security.getSelfHostname().getBytes());
         md.update(nonce);
         md.update(checkPingResult.getSharedKey().getBytes());
-        packer.packArrayHeader(5)
-            .packString("PONG")
-            .packBoolean(checkPingResult.isSucceeded())
-            .packString("")
-            .packString(security.getSelfHostname())
+        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
+            .packString("").packString(security.getSelfHostname())
             .packString(generateHexString(md.digest()));
       } else {
-        packer.packArrayHeader(5)
-            .packString("PONG")
-            .packBoolean(checkPingResult.isSucceeded())
-            .packString(checkPingResult.getReason())
-            .packString("")
-            .packString("");
+        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
+            .packString(checkPingResult.getReason()).packString("").packString("");
       }
     } catch (IOException e) {
       logger.error("Failed to pack PONG message", e);
@@ -319,7 +305,7 @@ final class NioForwardConnection implements NioAttachment {
 
   private String generateHexString(final byte[] digest) {
     StringBuilder sb = new StringBuilder();
-    for (byte b: digest) {
+    for (byte b : digest) {
       sb.append(String.format("%02x", b));
     }
     return sb.toString();

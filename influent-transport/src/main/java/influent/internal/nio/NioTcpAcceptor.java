@@ -46,7 +46,8 @@ public final class NioTcpAcceptor implements NioAttachment {
   private final BiConsumer<SelectionKey, SocketChannel> callback;
   private final ServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final SocketAddress localAddress, final BiConsumer<SelectionKey, SocketChannel> callback,
+  NioTcpAcceptor(final SocketAddress localAddress,
+      final BiConsumer<SelectionKey, SocketChannel> callback,
       final ServerSocketChannel serverSocketChannel) {
     this.localAddress = localAddress;
     this.callback = callback;
@@ -65,7 +66,8 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws InfluentIOException if some IO error occurs
    */
   public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
-      final BiConsumer<SelectionKey, SocketChannel> callback, final int backlog, final int receiveBufferSize) {
+      final BiConsumer<SelectionKey, SocketChannel> callback, final int backlog,
+      final int receiveBufferSize) {
     this.localAddress = localAddress;
     this.callback = callback;
     try {
