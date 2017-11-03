@@ -17,10 +17,11 @@
 package influent.forward;
 
 import java.net.SocketAddress;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
@@ -45,6 +46,7 @@ final class NioForwardServer implements ForwardServer {
    * @param keepAliveEnabled whether SO_KEEPALIVE is enabled or not
    * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
    * @param workerPoolSize the event loop pool size for workers
+   * @param channelConfig the channel configuration
    * @throws IllegalArgumentException if any of parameter is invalid
    *                                  e.g. the local address is already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
@@ -58,19 +60,20 @@ final class NioForwardServer implements ForwardServer {
                    final boolean keepAliveEnabled,
                    final boolean tcpNoDelayEnabled,
                    final int workerPoolSize,
-                   final NioChannelConfig channelConfig) {
+                   final NioChannelConfig channelConfig,
+                   final ForwardSecurity security) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
-    final Consumer<SocketChannel> channelFactory;
+    final BiConsumer<SelectionKey, SocketChannel> channelFactory;
     if (channelConfig.isSslEnabled()) {
-      channelFactory = socketChannel -> new NioSslForwardConnection(
+      channelFactory = (key, socketChannel) -> new NioSslForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback, channelConfig.createSSLEngine(),
           chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled
       );
     } else {
-      channelFactory = socketChannel -> new NioForwardConnection(
+      channelFactory = (key, socketChannel) -> new NioForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback,
-          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled
+          chunkSizeLimit, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled, security
       );
     }
     new NioTcpAcceptor(
