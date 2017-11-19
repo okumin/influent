@@ -36,7 +36,7 @@ class MsgpackStreamUnpackerSpec
     "consume and unpack" in {
       val gen = for {
         messages <- Gen.listOf(Gen.alphaStr.filter(_.length < 4096))
-        split <- Gen.chooseNum(1, 1024)
+        split <- Gen.chooseNum(1, 128)
       } yield {
         val packer = MessagePack.newDefaultBufferPacker()
         messages.foreach(packer.packString)
