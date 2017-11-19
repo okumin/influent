@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import influent.internal.nio.NioChannelConfig;
+import influent.internal.nio.NioTcpConfig;
 
 /**
  * A server which accepts requests of Fluentd's forward protocol.
@@ -41,11 +42,7 @@ public interface ForwardServer {
 
     private SocketAddress localAddress = new InetSocketAddress(DEFAULT_PORT);
     private long chunkSizeLimit = Long.MAX_VALUE;
-    private int backlog = 0;
-    private int sendBufferSize = 0;
-    private int receiveBufferSize = 0;
-    private boolean keepAliveEnabled = true;
-    private boolean tcpNoDelayEnabled = true;
+    private final NioTcpConfig.Builder tcpConfigBuilder = new NioTcpConfig.Builder();
     private int workerPoolSize = 0;
     private boolean sslEnabled = false;
     private String[] tlsVersions = new String[]{"TLSv1.1", "TLSv1.2"};
@@ -111,10 +108,7 @@ public interface ForwardServer {
      * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder backlog(final int value) {
-      if (value < 0) {
-        throw new IllegalArgumentException("Backlog must be greater than or equal to 0.");
-      }
-      backlog = value;
+      tcpConfigBuilder.backlog(value);
       return this;
     }
 
@@ -127,10 +121,7 @@ public interface ForwardServer {
      * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder sendBufferSize(final int value) {
-      if (value < 0) {
-        throw new IllegalArgumentException("Buffer size must be greater than or equal to 0.");
-      }
-      sendBufferSize = value;
+      tcpConfigBuilder.sendBufferSize(value);
       return this;
     }
 
@@ -143,10 +134,7 @@ public interface ForwardServer {
      * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder receiveBufferSize(final int value) {
-      if (value < 0) {
-        throw new IllegalArgumentException("Buffer size must be greater than or equal to 0.");
-      }
-      receiveBufferSize = value;
+      tcpConfigBuilder.receiveBufferSize(value);
       return this;
     }
 
@@ -157,7 +145,7 @@ public interface ForwardServer {
      * @return this builder
      */
     public Builder keepAliveEnabled(final boolean value) {
-      keepAliveEnabled = value;
+      tcpConfigBuilder.keepAliveEnabled(value);
       return this;
     }
 
@@ -168,7 +156,7 @@ public interface ForwardServer {
      * @return this builder
      */
     public Builder tcpNoDelayEnabled(final boolean value) {
-      tcpNoDelayEnabled = value;
+      tcpConfigBuilder.tcpNoDelayEnabled(value);
       return this;
     }
 
@@ -277,11 +265,7 @@ public interface ForwardServer {
           localAddress,
           forwardCallback,
           chunkSizeLimit,
-          backlog,
-          sendBufferSize,
-          receiveBufferSize,
-          keepAliveEnabled,
-          tcpNoDelayEnabled,
+          tcpConfigBuilder.build(),
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
           channelConfig,
           security

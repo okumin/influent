@@ -23,9 +23,8 @@ import java.util
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
-class NioEventLoopSpec extends WordSpec with GeneratorDrivenPropertyChecks with MockitoSugar {
+class NioEventLoopSpec extends WordSpec with MockitoSugar {
   private[this] def withEventLoop(loop: NioEventLoop)(f: NioEventLoop => Unit): Unit = {
     val thread = new Thread(loop)
     thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler {
