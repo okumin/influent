@@ -24,18 +24,22 @@ import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.Supplier;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
+import influent.internal.nio.NioTcpConfig;
 import influent.internal.util.ThreadSafeQueue;
 
 /**
@@ -83,17 +87,13 @@ final class NioSslForwardConnection implements NioAttachment {
    * @param eventLoop the {@code NioEventLoop} to which this {@code NioSslForwardConnection} belongs
    * @param callback the callback to handle requests
    * @param chunkSizeLimit the allowable size of a chunk
-   * @param sendBufferSize enqueue buffer size
-   *                       the default value is used when the given {@code value} is empty
-   * @param keepAliveEnabled whether SO_KEEPALIVE is enabled or not
-   * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
+   * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
   NioSslForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
-      final int sendBufferSize, final boolean keepAliveEnabled, final boolean tcpNoDelayEnabled) {
-    this(new NioTcpChannel(socketChannel, sendBufferSize, keepAliveEnabled, tcpNoDelayEnabled),
-        eventLoop, callback, engine, chunkSizeLimit);
+      final NioTcpConfig tcpConfig) {
+    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
 
     channel.register(eventLoop, SelectionKey.OP_READ, this);
   }

@@ -24,6 +24,7 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
+
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
@@ -43,31 +44,25 @@ public final class NioTcpChannel implements AutoCloseable {
    * Constructs a new {@code NioTcpChannel}.
    *
    * @param channel the accepted {@code SocketChannel}
-   * @param sendBufferSize the socket send buffer size
-   * @param keepAliveEnabled whether SO_KEEPALIVE is enabled or not
-   * @param tcpNoDelayEnabled whether TCP_NODELAY is enabled or not
+   * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
   public NioTcpChannel(final SocketChannel channel,
-                       final int sendBufferSize,
-                       final boolean keepAliveEnabled,
-                       final boolean tcpNoDelayEnabled) {
+                       final NioTcpConfig tcpConfig) {
     this.channel = channel;
-    this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
 
     try {
-      if (sendBufferSize > 0) {
-        channel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
-      }
-      channel.setOption(StandardSocketOptions.SO_KEEPALIVE, keepAliveEnabled);
-      channel.setOption(StandardSocketOptions.TCP_NODELAY, tcpNoDelayEnabled);
-    } catch (final UnsupportedOperationException | IllegalArgumentException e) {
+      this.remoteAddress = SocketChannels.getRemoteAddress(channel);
+      tcpConfig.getSendBufferSize().ifPresent((sendBufferSize) ->
+          SocketChannels.setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize)
+      );
+      SocketChannels
+          .setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
+      SocketChannels
+          .setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
+    } catch (final Exception e) {
       closeChannel(channel);
-      throw new AssertionError(e);
-    } catch (final IOException e) {
-      // ClosedChannelException is an IOException
-      closeChannel(channel);
-      throw new InfluentIOException("An unexpected IO error occurred.", e);
+      throw e;
     }
   }
 
