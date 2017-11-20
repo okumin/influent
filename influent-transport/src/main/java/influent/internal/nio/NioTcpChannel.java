@@ -16,16 +16,17 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 
 /**
  * A non-blocking mode {@code SocketChannel}.
@@ -51,17 +52,36 @@ public final class NioTcpChannel implements AutoCloseable {
     this.channel = channel;
 
     try {
-      this.remoteAddress = SocketChannels.getRemoteAddress(channel);
+      this.remoteAddress = getRemoteAddress(channel);
       tcpConfig.getSendBufferSize().ifPresent((sendBufferSize) ->
-          SocketChannels.setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize)
+              setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize)
       );
-      SocketChannels
-          .setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
-      SocketChannels
-          .setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
+      setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
+      setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
     } catch (final Exception e) {
       closeChannel(channel);
       throw e;
+    }
+  }
+
+  private static SocketAddress getRemoteAddress(final SocketChannel channel) {
+    try {
+      return channel.getRemoteAddress();
+    } catch (final IOException e) {
+      // ClosedChannelException is an IOException
+      throw new InfluentIOException("SocketChannel#getRemoteAddress failed", e);
+    }
+  }
+
+  private static <T> void setOption(final SocketChannel channel, final SocketOption<T> name,
+      final T value) {
+    try {
+      channel.setOption(name, value);
+    } catch (final UnsupportedOperationException | IllegalArgumentException e) {
+      throw new AssertionError(e);
+    } catch (final IOException e) {
+      // ClosedChannelException is an IOException
+      throw new InfluentIOException("SocketChannel#setOption failed", e);
     }
   }
 
