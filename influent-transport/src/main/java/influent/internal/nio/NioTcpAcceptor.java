@@ -16,21 +16,13 @@
 
 package influent.internal.nio;
 
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.NotYetBoundException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.function.BiConsumer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
+import java.net.SocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.util.function.BiConsumer;
 
 /**
  * A TCP acceptor.
@@ -40,14 +32,11 @@ import influent.internal.util.Exceptions;
 public final class NioTcpAcceptor implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpAcceptor.class);
 
-  private final SocketAddress localAddress;
   private final BiConsumer<SelectionKey, SocketChannel> callback;
-  private final ServerSocketChannel serverSocketChannel;
+  private final NioServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final SocketAddress localAddress,
-      final BiConsumer<SelectionKey, SocketChannel> callback,
-      final ServerSocketChannel serverSocketChannel) {
-    this.localAddress = localAddress;
+  NioTcpAcceptor(final BiConsumer<SelectionKey, SocketChannel> callback,
+      final NioServerSocketChannel serverSocketChannel) {
     this.callback = callback;
     this.serverSocketChannel = serverSocketChannel;
   }
@@ -64,19 +53,8 @@ public final class NioTcpAcceptor implements NioAttachment {
    */
   public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
       final BiConsumer<SelectionKey, SocketChannel> callback, final NioTcpConfig tcpConfig) {
-    this.localAddress = localAddress;
     this.callback = callback;
-
-    serverSocketChannel = ServerSocketChannels.open();
-    ServerSocketChannels
-        .setOption(serverSocketChannel, StandardSocketOptions.SO_REUSEADDR, true);
-    ServerSocketChannels
-        .bind(serverSocketChannel, this.localAddress, tcpConfig.getBacklog().orElse(0));
-    tcpConfig.getReceiveBufferSize().ifPresent((receiveBufferSize) ->
-        ServerSocketChannels
-            .setOption(serverSocketChannel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize)
-    );
-    eventLoop.register(serverSocketChannel, SelectionKey.OP_ACCEPT, this);
+    serverSocketChannel = NioServerSocketChannel.open(eventLoop, localAddress, tcpConfig, this);
     logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
   }
 
@@ -90,7 +68,7 @@ public final class NioTcpAcceptor implements NioAttachment {
   public void onAcceptable(final SelectionKey key) {
     while (true) {
       try {
-        final SocketChannel channel = accept();
+        final SocketChannel channel = serverSocketChannel.accept();
         if (channel == null) {
           break;
         }
@@ -101,30 +79,20 @@ public final class NioTcpAcceptor implements NioAttachment {
     }
   }
 
-  private SocketChannel accept() {
-    try {
-      return serverSocketChannel.accept();
-    } catch (final NotYetBoundException | SecurityException | AsynchronousCloseException e) {
-      // ClosedByInterruptException is an AsynchronousCloseException
-      throw new AssertionError(e);
-    } catch (final IOException e) {
-      // ClosedChannelException is an IOException
-      throw new InfluentIOException("NioTcpAcceptor failed accepting.", e);
-    }
-  }
-
   /**
    * Closes this {@code NioTcpAcceptor}.
    */
   @Override
   public void close() {
-    Exceptions.ignore(serverSocketChannel::close,
-        "The acceptor bound with " + localAddress + " closed.");
-    logger.info("The acceptor bound with {} closed.", localAddress);
+    serverSocketChannel.close();
+    logger.info("The acceptor bound with {} closed.", serverSocketChannel.getLocalAddress());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
-    return "NioTcpAcceptor(" + localAddress + ")";
+    return "NioTcpAcceptor(" + serverSocketChannel.getLocalAddress() + ")";
   }
 }

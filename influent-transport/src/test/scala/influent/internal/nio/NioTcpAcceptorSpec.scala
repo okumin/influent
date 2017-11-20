@@ -16,24 +16,22 @@
 
 package influent.internal.nio
 
-import java.io.IOException
-import java.net.InetSocketAddress
-import java.nio.channels.{SelectionKey, ServerSocketChannel, SocketChannel}
-import java.util.function.{BiConsumer, Consumer}
+import java.nio.channels.{SelectionKey, SocketChannel}
+import java.util.function.BiConsumer
 
+import influent.exception.InfluentIOException
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
 class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
-  private[this] val localAddress = new InetSocketAddress(24224)
   private[this] val nopCallback = new BiConsumer[SelectionKey, SocketChannel] {
     override def accept(k: SelectionKey, t: SocketChannel): Unit = ()
   }
 
   "onAcceptable" should {
     "accept a new connection" in {
-      val serverSocketChannel = mock[ServerSocketChannel]
+      val serverSocketChannel = mock[NioServerSocketChannel]
       val channel1 = mock[SocketChannel]
       val channel2 = mock[SocketChannel]
       val key = mock[SelectionKey]
@@ -41,7 +39,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
       val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
 
-      val acceptor = new NioTcpAcceptor(localAddress, callback, serverSocketChannel)
+      val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
       assert(acceptor.onAcceptable(key) === ())
 
       verify(serverSocketChannel, times(3)).accept()
@@ -52,13 +50,15 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
 
     "not fail" when {
       "it fails accepting" in {
-        val serverSocketChannel = mock[ServerSocketChannel]
+        val serverSocketChannel = mock[NioServerSocketChannel]
         val channel = mock[SocketChannel]
         val key = mock[SelectionKey]
-        when(serverSocketChannel.accept()).thenThrow(new IOException()).thenReturn(channel, null)
+        when(serverSocketChannel.accept())
+          .thenThrow(new InfluentIOException())
+          .thenReturn(channel, null)
         val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
 
-        val acceptor = new NioTcpAcceptor(localAddress, callback, serverSocketChannel)
+        val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
         assert(acceptor.onAcceptable(key) === ())
 
         verify(serverSocketChannel, times(3)).accept()
@@ -67,7 +67,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       }
 
       "the callback function fails" in {
-        val serverSocketChannel = mock[ServerSocketChannel]
+        val serverSocketChannel = mock[NioServerSocketChannel]
         val channel1 = mock[SocketChannel]
         val channel2 = mock[SocketChannel]
         val key = mock[SelectionKey]
@@ -75,7 +75,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
         val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
         when(callback.accept(key, channel1)).thenThrow(new RuntimeException)
 
-        val acceptor = new NioTcpAcceptor(localAddress, callback, serverSocketChannel)
+        val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
         assert(acceptor.onAcceptable(key) === ())
 
         verify(serverSocketChannel, times(3)).accept()
@@ -88,21 +88,10 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
 
   "close" should {
     "close the server socket channel" in {
-      val serverSocketChannel = mock[ServerSocketChannel]
-      val acceptor = new NioTcpAcceptor(localAddress, nopCallback, serverSocketChannel)
+      val serverSocketChannel = mock[NioServerSocketChannel]
+      val acceptor = new NioTcpAcceptor(nopCallback, serverSocketChannel)
       assert(acceptor.close() === ())
       verify(serverSocketChannel).close()
-    }
-
-    "not fail" when {
-      "it fails closing the server socket channel" in {
-        val serverSocketChannel = mock[ServerSocketChannel]
-        when(serverSocketChannel.close()).thenThrow(new IOException())
-
-        val acceptor = new NioTcpAcceptor(localAddress, nopCallback, serverSocketChannel)
-        assert(acceptor.close() === ())
-        verify(serverSocketChannel).close()
-      }
     }
   }
 }
