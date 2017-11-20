@@ -27,12 +27,10 @@ import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;

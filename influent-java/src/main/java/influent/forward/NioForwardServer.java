@@ -22,7 +22,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.BiConsumer;
-
 import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
