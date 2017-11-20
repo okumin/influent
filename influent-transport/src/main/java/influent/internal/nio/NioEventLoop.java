@@ -16,6 +16,12 @@
 
 package influent.internal.nio;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
+import influent.internal.util.Futures;
+import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -24,12 +30,6 @@ import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
-import influent.internal.util.Futures;
-import influent.internal.util.ThreadSafeQueue;
 
 /**
  * An event loop for non-blocking IO.

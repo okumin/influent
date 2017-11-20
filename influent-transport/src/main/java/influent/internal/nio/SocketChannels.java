@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.SocketChannel;
-
 import influent.exception.InfluentIOException;
 
 /**

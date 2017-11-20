@@ -24,7 +24,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
