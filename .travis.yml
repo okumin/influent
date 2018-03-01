@@ -1,7 +1,7 @@
 language: scala
 
 script:
-  - sbt test
+  - sbt -J-Xmx3784m test
 
 jdk:
   - oraclejdk8
