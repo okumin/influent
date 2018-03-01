@@ -17,7 +17,7 @@
 package influent.internal.nio
 
 import influent.exception.InfluentIOException
-import java.nio.channels.{SelectionKey, SocketChannel}
+import java.nio.channels.SocketChannel
 import java.util.function.Consumer
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
@@ -33,13 +33,12 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       val serverSocketChannel = mock[NioServerSocketChannel]
       val channel1 = mock[SocketChannel]
       val channel2 = mock[SocketChannel]
-      val key = mock[SelectionKey]
 
       when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
       val callback = mock[Consumer[SocketChannel]]
 
       val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-      assert(acceptor.onAcceptable(key) === ())
+      assert(acceptor.onAcceptable() === ())
 
       verify(serverSocketChannel, times(3)).accept()
       verify(callback).accept(channel1)
@@ -51,14 +50,13 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       "it fails accepting" in {
         val serverSocketChannel = mock[NioServerSocketChannel]
         val channel = mock[SocketChannel]
-        val key = mock[SelectionKey]
         when(serverSocketChannel.accept())
           .thenThrow(new InfluentIOException())
           .thenReturn(channel, null)
         val callback = mock[Consumer[SocketChannel]]
 
         val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-        assert(acceptor.onAcceptable(key) === ())
+        assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
         verify(callback).accept(channel)
@@ -69,13 +67,12 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
         val serverSocketChannel = mock[NioServerSocketChannel]
         val channel1 = mock[SocketChannel]
         val channel2 = mock[SocketChannel]
-        val key = mock[SelectionKey]
         when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
         val callback = mock[Consumer[SocketChannel]]
         when(callback.accept(channel1)).thenThrow(new RuntimeException)
 
         val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-        assert(acceptor.onAcceptable(key) === ())
+        assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
         verify(callback).accept(channel1)

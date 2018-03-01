@@ -211,7 +211,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
 
       verify(attachment).onWritable(key1)
       verify(attachment).onReadable(key2)
-      verify(attachment).onAcceptable(key3)
+      verify(attachment).onAcceptable()
       verify(attachment).onConnectable(key4)
       verify(attachment).onWritable(key5)
       verify(attachment).onReadable(key5)

@@ -17,7 +17,6 @@
 package influent.internal.nio;
 
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -61,11 +60,9 @@ public final class NioTcpAcceptor implements NioAttachment {
   /**
    * Handles an accept event.
    * This method never fails.
-   *
-   * @param key the {@code SelectionKey}
    */
   @Override
-  public void onAcceptable(final SelectionKey key) {
+  public void onAcceptable() {
     while (true) {
       try {
         final SocketChannel channel = serverSocketChannel.accept();
