@@ -52,11 +52,10 @@ public interface NioAttachment extends AutoCloseable {
    * Handles an accept event.
    * {@code NioAttachment} is closed when {@code onAcceptable} throws an exception.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onAcceptable} is not supported
    */
-  default void onAcceptable(final SelectionKey key) {
+  default void onAcceptable() {
     throw new UnsupportedOperationException(this + " does not support onAcceptable");
   }
 

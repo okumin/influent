@@ -16,17 +16,16 @@
 
 package influent.internal.nio
 
-import java.nio.channels.{SelectionKey, SocketChannel}
-import java.util.function.BiConsumer
-
 import influent.exception.InfluentIOException
+import java.nio.channels.SocketChannel
+import java.util.function.Consumer
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
 class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
-  private[this] val nopCallback = new BiConsumer[SelectionKey, SocketChannel] {
-    override def accept(k: SelectionKey, t: SocketChannel): Unit = ()
+  private[this] val nopCallback = new Consumer[SocketChannel] {
+    override def accept(t: SocketChannel): Unit = ()
   }
 
   "onAcceptable" should {
@@ -34,17 +33,16 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       val serverSocketChannel = mock[NioServerSocketChannel]
       val channel1 = mock[SocketChannel]
       val channel2 = mock[SocketChannel]
-      val key = mock[SelectionKey]
 
       when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
-      val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
+      val callback = mock[Consumer[SocketChannel]]
 
       val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-      assert(acceptor.onAcceptable(key) === ())
+      assert(acceptor.onAcceptable() === ())
 
       verify(serverSocketChannel, times(3)).accept()
-      verify(callback).accept(key, channel1)
-      verify(callback).accept(key, channel2)
+      verify(callback).accept(channel1)
+      verify(callback).accept(channel2)
       verifyNoMoreInteractions(callback)
     }
 
@@ -52,17 +50,16 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       "it fails accepting" in {
         val serverSocketChannel = mock[NioServerSocketChannel]
         val channel = mock[SocketChannel]
-        val key = mock[SelectionKey]
         when(serverSocketChannel.accept())
           .thenThrow(new InfluentIOException())
           .thenReturn(channel, null)
-        val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
+        val callback = mock[Consumer[SocketChannel]]
 
         val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-        assert(acceptor.onAcceptable(key) === ())
+        assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
-        verify(callback).accept(key, channel)
+        verify(callback).accept(channel)
         verifyNoMoreInteractions(callback)
       }
 
@@ -70,17 +67,16 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
         val serverSocketChannel = mock[NioServerSocketChannel]
         val channel1 = mock[SocketChannel]
         val channel2 = mock[SocketChannel]
-        val key = mock[SelectionKey]
         when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
-        val callback = mock[BiConsumer[SelectionKey, SocketChannel]]
-        when(callback.accept(key, channel1)).thenThrow(new RuntimeException)
+        val callback = mock[Consumer[SocketChannel]]
+        when(callback.accept(channel1)).thenThrow(new RuntimeException)
 
         val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
-        assert(acceptor.onAcceptable(key) === ())
+        assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
-        verify(callback).accept(key, channel1)
-        verify(callback).accept(key, channel2)
+        verify(callback).accept(channel1)
+        verify(callback).accept(channel2)
         verifyNoMoreInteractions(callback)
       }
     }

@@ -26,7 +26,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.function.IntUnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +131,7 @@ interface NioEventLoopTask {
             attachment.onReadable(key);
           }
           if (key.isAcceptable()) {
-            attachment.onAcceptable(key);
+            attachment.onAcceptable();
           }
           if (key.isConnectable()) {
             attachment.onConnectable(key);
