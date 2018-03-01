@@ -16,13 +16,13 @@
 
 package influent.internal.nio;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import influent.exception.InfluentIOException;
 
 /**
  * A TCP acceptor.
@@ -32,10 +32,10 @@ import java.util.function.BiConsumer;
 public final class NioTcpAcceptor implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpAcceptor.class);
 
-  private final BiConsumer<SelectionKey, SocketChannel> callback;
+  private final Consumer<SocketChannel> callback;
   private final NioServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final BiConsumer<SelectionKey, SocketChannel> callback,
+  NioTcpAcceptor(final Consumer<SocketChannel> callback,
       final NioServerSocketChannel serverSocketChannel) {
     this.callback = callback;
     this.serverSocketChannel = serverSocketChannel;
@@ -52,7 +52,7 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws InfluentIOException if some IO error occurs
    */
   public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
-      final BiConsumer<SelectionKey, SocketChannel> callback, final NioTcpConfig tcpConfig) {
+      final Consumer<SocketChannel> callback, final NioTcpConfig tcpConfig) {
     this.callback = callback;
     serverSocketChannel = NioServerSocketChannel.open(eventLoop, localAddress, tcpConfig, this);
     logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
@@ -72,7 +72,7 @@ public final class NioTcpAcceptor implements NioAttachment {
         if (channel == null) {
           break;
         }
-        callback.accept(key, channel);
+        callback.accept(channel);
       } catch (final Exception e) {
         logger.error("NioTcpAcceptor failed accepting.", e);
       }

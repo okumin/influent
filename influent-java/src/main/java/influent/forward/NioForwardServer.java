@@ -17,11 +17,10 @@
 package influent.forward;
 
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
@@ -57,14 +56,14 @@ final class NioForwardServer implements ForwardServer {
                    final ForwardSecurity security) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
-    final BiConsumer<SelectionKey, SocketChannel> channelFactory;
+    final Consumer<SocketChannel> channelFactory;
     if (channelConfig.isSslEnabled()) {
-      channelFactory = (key, socketChannel) -> new NioSslForwardConnection(
+      channelFactory = (socketChannel) -> new NioSslForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback,
           channelConfig.createSSLEngine(), chunkSizeLimit, tcpConfig
       );
     } else {
-      channelFactory = (key, socketChannel) -> new NioForwardConnection(
+      channelFactory = (socketChannel) -> new NioForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, tcpConfig, security
       );
     }
