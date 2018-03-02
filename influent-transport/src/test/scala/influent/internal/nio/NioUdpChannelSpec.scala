@@ -129,7 +129,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       val attachment = mock[NioAttachment]
 
       assert(channel.register(eventLoop, ops, attachment) === ())
-      verify(eventLoop).register(datagramChannel, ops, attachment)
+      verify(eventLoop).register(channel, ops, attachment)
     }
   }
 
@@ -151,6 +151,14 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
         assert(channel.close() === ())
         verify(datagramChannel).close()
       }
+    }
+  }
+
+  "unwrap" should {
+    "return the underlying channel" in {
+      val datagramChannel = mock[DatagramChannel]
+      val channel = new NioUdpChannel(datagramChannel)
+      assert(channel.unwrap() === datagramChannel)
     }
   }
 }

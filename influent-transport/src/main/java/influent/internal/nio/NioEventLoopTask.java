@@ -21,7 +21,6 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.IllegalSelectorException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -42,11 +41,11 @@ interface NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(Register.class);
 
     private final Selector selector;
-    private final SelectableChannel channel;
+    private final NioSelectableChannel channel;
     private final int ops;
     private final NioAttachment attachment;
 
-    Register(final Selector selector, final SelectableChannel channel, final int ops,
+    Register(final Selector selector, final NioSelectableChannel channel, final int ops,
         final NioAttachment attachment) {
       this.selector = selector;
       this.channel = channel;
@@ -57,7 +56,9 @@ interface NioEventLoopTask {
     @Override
     public void run() {
       try {
-        channel.configureBlocking(false).register(selector, ops, attachment);
+        final SelectionKey key =
+            channel.unwrap().configureBlocking(false).register(selector, ops, attachment);
+        channel.onRegistered(key);
       } catch (final ClosedSelectorException | IllegalBlockingModeException
           | IllegalSelectorException e) {
         throw new AssertionError(e);

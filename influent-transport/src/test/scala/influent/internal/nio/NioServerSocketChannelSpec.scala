@@ -16,11 +16,10 @@
 
 package influent.internal.nio
 
+import influent.exception.InfluentIOException
 import java.io.IOException
 import java.net.InetSocketAddress
-import java.nio.channels.{ClosedChannelException, ServerSocketChannel, SocketChannel}
-
-import influent.exception.InfluentIOException
+import java.nio.channels.{ClosedChannelException, SelectionKey, ServerSocketChannel, SocketChannel}
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
@@ -72,6 +71,26 @@ class NioServerSocketChannelSpec
         assert(channel.close() === ())
         verify(underlying).close()
       }
+    }
+  }
+
+  "register" should {
+    "invoke NioEventLoop#register" in {
+      val underlying = mock[ServerSocketChannel]
+      val channel = new NioServerSocketChannel(underlying, localAddress)
+      val eventLoop = mock[NioEventLoop]
+      val attachment = mock[NioAttachment]
+      assert(channel.register(eventLoop, attachment) === ())
+
+      verify(eventLoop).register(channel, SelectionKey.OP_ACCEPT, attachment)
+    }
+  }
+
+  "unwrap" should {
+    "return the underlying channel" in {
+      val underlying = mock[ServerSocketChannel]
+      val channel = new NioServerSocketChannel(underlying, localAddress)
+      assert(channel.unwrap() === underlying)
     }
   }
 }

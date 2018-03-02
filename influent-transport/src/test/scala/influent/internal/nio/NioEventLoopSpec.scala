@@ -84,14 +84,18 @@ class NioEventLoopSpec extends WordSpec with MockitoSugar {
         val attachment = new NioAttachment {
           override protected def close(): Unit = ()
         }
-        val channel = mock[SelectableChannel]
-        when(channel.configureBlocking(false)).thenReturn(channel)
-        when(channel.register(selector, ops, attachment)).thenReturn(mock[SelectionKey])
+        val key = mock[SelectionKey]
+        val javaChannel = mock[SelectableChannel]
+        when(javaChannel.configureBlocking(false)).thenReturn(javaChannel)
+        when(javaChannel.register(selector, ops, attachment)).thenReturn(key)
+        val channel = mock[NioSelectableChannel]
+        when(channel.unwrap()).thenReturn(javaChannel)
         assert(loop.register(channel, ops, attachment) === ())
 
         Thread.sleep(1000)
-        verify(channel).configureBlocking(false)
-        verify(channel).register(selector, ops, attachment)
+        verify(javaChannel).configureBlocking(false)
+        verify(javaChannel).register(selector, ops, attachment)
+        verify(channel).onRegistered(key)
       }
     }
   }

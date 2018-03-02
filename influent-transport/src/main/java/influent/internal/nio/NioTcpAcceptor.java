@@ -53,7 +53,8 @@ public final class NioTcpAcceptor implements NioAttachment {
   public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
       final Consumer<SocketChannel> callback, final NioTcpConfig tcpConfig) {
     this.callback = callback;
-    serverSocketChannel = NioServerSocketChannel.open(eventLoop, localAddress, tcpConfig, this);
+    serverSocketChannel = NioServerSocketChannel.open(localAddress, tcpConfig);
+    serverSocketChannel.register(eventLoop, this);
     logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
   }
 

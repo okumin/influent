@@ -16,19 +16,26 @@
 
 package influent.internal.nio;
 
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
-import java.nio.channels.*;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.NotYetBoundException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.UnsupportedAddressTypeException;
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 
 /**
  * A adapter of {@code ServerSocketChannel}.
  * The main purpose is to handle complex errors.
  */
-final class NioServerSocketChannel {
+final class NioServerSocketChannel extends NioSelectableChannel {
   private final ServerSocketChannel channel;
   private final SocketAddress localAddress;
 
@@ -37,7 +44,7 @@ final class NioServerSocketChannel {
     this.localAddress = localAddress;
   }
 
-  private NioServerSocketChannel(final ServerSocketChannel channel, final NioEventLoop eventLoop, final SocketAddress localAddress, final NioTcpConfig config, final NioAttachment attachment) {
+  private NioServerSocketChannel(final ServerSocketChannel channel, final SocketAddress localAddress, final NioTcpConfig config) {
     this.channel = channel;
     this.localAddress = localAddress;
 
@@ -46,7 +53,6 @@ final class NioServerSocketChannel {
     config.getReceiveBufferSize().ifPresent((receiveBufferSize) ->
             setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize)
     );
-    eventLoop.register(channel, SelectionKey.OP_ACCEPT, attachment);
   }
 
   private static void bind(final ServerSocketChannel channel, final SocketAddress localAddress,
@@ -78,17 +84,14 @@ final class NioServerSocketChannel {
   /**
    * Opens a {@code NioServerSocketChannel}.
    *
-   * @param eventLoop    the {@code NioEventLoop}
    * @param localAddress the server's address
    * @return {@code ServerSocketChannel}
    * @throws InfluentIOException      when ServerSocketChannel#open fails
    * @throws IllegalArgumentException when the local address is illegal or already bound
    */
-  static NioServerSocketChannel open(final NioEventLoop eventLoop,
-      final SocketAddress localAddress, final NioTcpConfig config, final NioAttachment attachment) {
+  static NioServerSocketChannel open(final SocketAddress localAddress, final NioTcpConfig config) {
     try {
-      return new NioServerSocketChannel(ServerSocketChannel.open(), eventLoop, localAddress,
-          config, attachment);
+      return new NioServerSocketChannel(ServerSocketChannel.open(), localAddress, config);
     } catch (final IOException e) {
       throw new InfluentIOException("ServerSocketChannel#open failed", e);
     }
@@ -118,8 +121,7 @@ final class NioServerSocketChannel {
    * Closes this {@code NioServerSocketChannel}.
    */
   void close() {
-    Exceptions.ignore(channel::close,
-            "The acceptor bound with " + localAddress + " closed.");
+    Exceptions.ignore(channel::close, "The acceptor bound with " + localAddress + " closed.");
   }
 
   /**
@@ -128,6 +130,34 @@ final class NioServerSocketChannel {
    */
   SocketAddress getLocalAddress() {
     return localAddress;
+  }
+
+  /**
+   * Registers this channel to the selector.
+   * This operation is done asynchronously.
+   *
+   * @param eventLoop the event loop
+   * @param attachment the attachment
+   */
+  void register(final NioEventLoop eventLoop, final NioAttachment attachment) {
+    eventLoop.register(this, SelectionKey.OP_ACCEPT, attachment);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  SelectableChannel unwrap() {
+    return channel;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  void onRegistered(final SelectionKey key) {
+    // do nothing
+    // TODO: back-pressure
   }
 
   /**

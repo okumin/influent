@@ -109,7 +109,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       val attachment = mock[NioAttachment]
 
       assert(channel.register(eventLoop, ops, attachment) === ())
-      verify(eventLoop).register(socketChannel, ops, attachment)
+      verify(eventLoop).register(channel, ops, attachment)
     }
   }
 
@@ -149,6 +149,14 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val channel = new NioTcpChannel(socketChannel)
         assert(!channel.isOpen)
       }
+    }
+  }
+
+  "unwrap" should {
+    "return the underlying channel" in {
+      val socketChannel = mock[SocketChannel]
+      val channel = new NioTcpChannel(socketChannel)
+      assert(channel.unwrap() === socketChannel)
     }
   }
 }
