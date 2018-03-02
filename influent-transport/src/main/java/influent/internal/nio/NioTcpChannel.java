@@ -16,8 +16,6 @@
 
 package influent.internal.nio;
 
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
@@ -26,12 +24,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 
 /**
  * A non-blocking mode {@code SocketChannel}.
  */
-public final class NioTcpChannel implements AutoCloseable {
+public final class NioTcpChannel extends NioSelectableChannel implements AutoCloseable {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
 
@@ -142,7 +144,7 @@ public final class NioTcpChannel implements AutoCloseable {
    * @param attachment the {@code NioAttachment}
    */
   public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
-    eventLoop.register(channel, ops, attachment);
+    eventLoop.register(this, ops, attachment);
   }
 
   /**
@@ -169,6 +171,22 @@ public final class NioTcpChannel implements AutoCloseable {
    */
   public SocketAddress getRemoteAddress() {
     return remoteAddress;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  SelectableChannel unwrap() {
+    return channel;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  void onRegistered(final SelectionKey key) {
+    // TODO
   }
 
   /**

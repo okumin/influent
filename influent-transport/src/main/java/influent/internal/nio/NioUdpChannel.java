@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -33,7 +35,7 @@ import influent.internal.util.Exceptions;
 /**
  * A non-blocking mode {@code DatagramChannel}.
  */
-public final class NioUdpChannel implements AutoCloseable {
+public final class NioUdpChannel extends NioSelectableChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
   private final SocketAddress localAddress;
@@ -132,7 +134,7 @@ public final class NioUdpChannel implements AutoCloseable {
    * @param attachment the {@code NioAttachment}
    */
   public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
-    eventLoop.register(channel, ops, attachment);
+    eventLoop.register(this, ops, attachment);
   }
 
   /**
@@ -149,6 +151,22 @@ public final class NioUdpChannel implements AutoCloseable {
    */
   public SocketAddress getLocalAddress() {
     return localAddress;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  SelectableChannel unwrap() {
+    return channel;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  void onRegistered(final SelectionKey key) {
+    // TODO
   }
 
   /**

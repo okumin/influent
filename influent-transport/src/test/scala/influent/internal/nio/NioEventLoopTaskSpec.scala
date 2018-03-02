@@ -39,15 +39,18 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val attachment = new NopAttachment
       val key = mock[SelectionKey]
 
-      val channel = mock[SelectableChannel]
-      when(channel.configureBlocking(false)).thenReturn(channel)
-      when(channel.register(selector, ops, attachment)).thenReturn(key)
+      val javaChannel = mock[SelectableChannel]
+      when(javaChannel.configureBlocking(false)).thenReturn(javaChannel)
+      when(javaChannel.register(selector, ops, attachment)).thenReturn(key)
+      val channel = mock[NioSelectableChannel]
+      when(channel.unwrap()).thenReturn(javaChannel)
 
       val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
       task.run()
 
-      verify(channel).configureBlocking(false)
-      verify(channel).register(selector, ops, attachment)
+      verify(javaChannel).configureBlocking(false)
+      verify(javaChannel).register(selector, ops, attachment)
+      verify(channel).onRegistered(key)
     }
 
     "ignore errors" when {
@@ -62,14 +65,17 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val ops = SelectionKey.OP_WRITE
           val attachment = new NopAttachment
 
-          val channel = mock[SelectableChannel]
-          when(channel.configureBlocking(false)).thenThrow(error)
+          val javaChannel = mock[SelectableChannel]
+          when(javaChannel.configureBlocking(false)).thenThrow(error)
+          val channel = mock[NioSelectableChannel]
+          when(channel.unwrap()).thenReturn(javaChannel)
 
           val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
           task.run()
 
-          verify(channel).configureBlocking(false)
-          verify(channel, never()).register(any(), anyInt(), any())
+          verify(javaChannel).configureBlocking(false)
+          verify(javaChannel, never()).register(any(), anyInt(), any())
+          verify(channel, never()).onRegistered(any())
         }
       }
 
@@ -84,15 +90,18 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val ops = SelectionKey.OP_WRITE
           val attachment = new NopAttachment
 
-          val channel = mock[SelectableChannel]
-          when(channel.configureBlocking(false)).thenReturn(channel)
-          when(channel.register(selector, ops, attachment)).thenThrow(error)
+          val javaChannel = mock[SelectableChannel]
+          when(javaChannel.configureBlocking(false)).thenReturn(javaChannel)
+          when(javaChannel.register(selector, ops, attachment)).thenThrow(error)
+          val channel = mock[NioSelectableChannel]
+          when(channel.unwrap()).thenReturn(javaChannel)
 
           val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
           task.run()
 
-          verify(channel).configureBlocking(false)
-          verify(channel).register(selector, ops, attachment)
+          verify(javaChannel).configureBlocking(false)
+          verify(javaChannel).register(selector, ops, attachment)
+          verify(channel, never()).onRegistered(any())
         }
       }
     }

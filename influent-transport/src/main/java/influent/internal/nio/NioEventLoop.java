@@ -16,20 +16,19 @@
 
 package influent.internal.nio;
 
+import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 import influent.internal.util.Futures;
 import influent.internal.util.ThreadSafeQueue;
-import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An event loop for non-blocking IO.
@@ -108,7 +107,7 @@ public final class NioEventLoop implements Runnable {
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final SelectableChannel channel, final int ops,
+  public void register(final NioSelectableChannel channel, final int ops,
       final NioAttachment attachment) {
     addTask(new NioEventLoopTask.Register(selector, channel, ops, attachment));
   }
