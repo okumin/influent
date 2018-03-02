@@ -107,8 +107,7 @@ public final class NioEventLoop implements Runnable {
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioSelectableChannel channel, final int ops,
-      final NioAttachment attachment) {
+  void register(final NioSelectableChannel channel, final int ops, final NioAttachment attachment) {
     addTask(new NioEventLoopTask.Register(selector, channel, ops, attachment));
   }
 
