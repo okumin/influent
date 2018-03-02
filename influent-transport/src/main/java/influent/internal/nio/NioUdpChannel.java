@@ -24,7 +24,6 @@ import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -159,14 +158,6 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   @Override
   SelectableChannel unwrap() {
     return channel;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  void onRegistered(final SelectionKey key) {
-    // TODO
   }
 
   /**

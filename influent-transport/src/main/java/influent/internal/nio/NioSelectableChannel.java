@@ -23,15 +23,30 @@ import java.nio.channels.SelectionKey;
  * A wrapped {@code SelectableChannel}.
  */
 abstract class NioSelectableChannel {
+  private SelectionKey key;
+
   /**
    * @return the underlying channel
    */
   abstract SelectableChannel unwrap();
 
   /**
+   * @return the {@code SelectionKey}
+   */
+  final SelectionKey selectionKey() {
+    return key;
+  }
+
+  /**
    * This is invoked when this channel is registered to a selector.
    *
    * @param key the {@code SelectionKey}
+   * @throws IllegalStateException when this method is invoked more than once
    */
-  abstract void onRegistered(final SelectionKey key);
+  final void onRegistered(final SelectionKey key) {
+    if (this.key != null) {
+      throw new IllegalStateException("This channel is registered more than once.");
+    }
+    this.key = key;
+  }
 }

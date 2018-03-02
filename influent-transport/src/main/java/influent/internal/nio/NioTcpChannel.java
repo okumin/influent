@@ -25,7 +25,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
@@ -179,14 +178,6 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   @Override
   SelectableChannel unwrap() {
     return channel;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  void onRegistered(final SelectionKey key) {
-    // TODO
   }
 
   /**

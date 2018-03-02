@@ -155,15 +155,6 @@ final class NioServerSocketChannel extends NioSelectableChannel {
    * {@inheritDoc}
    */
   @Override
-  void onRegistered(final SelectionKey key) {
-    // do nothing
-    // TODO: back-pressure
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public String toString() {
     return "NioServerSocketChannel(" + localAddress + ')';
   }
