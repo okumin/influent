@@ -114,11 +114,11 @@ final class NioForwardConnection implements NioAttachment {
       node = security.findNode(((InetSocketAddress) channel.getRemoteAddress()).getAddress());
       state = ConnectionState.HELO;
       pingDecoder = new MsgPackPingDecoder(this.security, node.orElse(null), nonce, userAuth);
-      channel.register(eventLoop, SelectionKey.OP_WRITE, this);
+      channel.register(eventLoop, false, true, this);
       responses.enqueue(generateHelo());
     } else {
       state = ConnectionState.ESTABLISHED;
-      channel.register(eventLoop, SelectionKey.OP_READ, this);
+      channel.register(eventLoop, true, false, this);
     }
   }
 
@@ -131,10 +131,10 @@ final class NioForwardConnection implements NioAttachment {
   @Override
   public void onWritable(final SelectionKey key) {
     if (sendResponses()) {
-      eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
+      channel.disableOpWrite(eventLoop);
       if (state == ConnectionState.HELO) {
         state = ConnectionState.PINGPONG;
-        eventLoop.enableInterestSet(key, SelectionKey.OP_READ);
+        channel.enableOpRead(eventLoop);
         // TODO disconnect after writing failed PONG
       }
     }
@@ -165,7 +165,7 @@ final class NioForwardConnection implements NioAttachment {
       case PINGPONG:
         receivePing(key, result -> {
           responses.enqueue(generatePong(result));
-          eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+          channel.enableOpWrite(eventLoop);
           state = ConnectionState.ESTABLISHED;
         });
         break;
@@ -243,7 +243,7 @@ final class NioForwardConnection implements NioAttachment {
       packer.packString(chunk);
       final ByteBuffer buffer = packer.toMessageBuffer().sliceAsByteBuffer();
       responses.enqueue(buffer);
-      eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+      channel.enableOpWrite(eventLoop);
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }

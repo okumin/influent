@@ -25,6 +25,7 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
@@ -139,11 +140,50 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * This method is thread-safe.
    *
    * @param eventLoop the {@code NioEventLoop}
-   * @param ops the interest set
+   * @param opReadEnabled whether OP_READ is enabled or not
+   * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
+  public void register(final NioEventLoop eventLoop, final boolean opReadEnabled,
+      final boolean opWriteEnabled, final NioAttachment attachment) {
+    int ops = 0;
+    if (opReadEnabled) {
+      ops |= SelectionKey.OP_READ;
+    }
+    if (opWriteEnabled) {
+      ops |= SelectionKey.OP_WRITE;
+    }
     eventLoop.register(this, ops, attachment);
+  }
+
+  /**
+   * Enables OP_READ.
+   * Operations are done asynchronously.
+   *
+   * @param eventLoop the {@code NioEventLoop}
+   */
+  public void enableOpRead(final NioEventLoop eventLoop) {
+    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_READ);
+  }
+
+  /**
+   * Enables OP_WRITE.
+   * Operations are done asynchronously.
+   *
+   * @param eventLoop the {@code NioEventLoop}
+   */
+  public void enableOpWrite(final NioEventLoop eventLoop) {
+    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+  }
+
+  /**
+   * Disables OP_WRITE.
+   * Operations are done asynchronously.
+   *
+   * @param eventLoop the {@code NioEventLoop}
+   */
+  public void disableOpWrite(final NioEventLoop eventLoop) {
+    eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
   }
 
   /**

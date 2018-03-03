@@ -35,8 +35,8 @@ class MsgpackStreamUnpackerSpec
   "MsgpackStreamUnpacker" should {
     "consume and unpack" in {
       val gen = for {
-        messages <- Gen.listOf(Gen.alphaStr.filter(_.length < 4096))
-        split <- Gen.chooseNum(1, 128)
+        messages <- Gen.listOf(Gen.alphaStr.filter(_.length < 256))
+        split <- Gen.chooseNum(1, 64)
       } yield {
         val packer = MessagePack.newDefaultBufferPacker()
         messages.foreach(packer.packString)
@@ -56,7 +56,7 @@ class MsgpackStreamUnpackerSpec
           }
           val supplier = new Supplier[ByteBuffer] {
             val iterator = (chunks :+ extra).map { bytes =>
-              val buffer = ByteBuffer.allocate(1024 * 1024)
+              val buffer = ByteBuffer.allocate(1024 * 16)
               buffer.put(bytes).flip()
               buffer
             }.toIterator
