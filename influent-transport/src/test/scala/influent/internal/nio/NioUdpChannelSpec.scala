@@ -128,8 +128,14 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       val ops = SelectionKey.OP_READ | SelectionKey.OP_WRITE
       val attachment = mock[NioAttachment]
 
-      assert(channel.register(eventLoop, ops, attachment) === ())
-      verify(eventLoop).register(channel, ops, attachment)
+      assert(channel.register(eventLoop, true, false, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_READ, attachment)
+
+      assert(channel.register(eventLoop, false, true, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_WRITE, attachment)
+
+      assert(channel.register(eventLoop, true, true, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_READ | SelectionKey.OP_WRITE, attachment)
     }
   }
 
