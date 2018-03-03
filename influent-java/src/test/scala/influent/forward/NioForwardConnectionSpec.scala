@@ -88,7 +88,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         verify(channel).write(buffer)
       }
       assert(!connection.responses.nonEmpty())
-      verify(eventLoop).disableInterestSet(key, SelectionKey.OP_WRITE)
+      verify(channel).disableOpWrite(eventLoop)
     }
 
     "not disable OP_WRITE" when {
@@ -200,7 +200,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       assert(connection.responses.dequeue() === response("chunk1"))
       assert(connection.responses.dequeue() === response("chunk3"))
       assert(!connection.responses.nonEmpty())
-      verify(eventLoop, times(2)).enableInterestSet(key, SelectionKey.OP_WRITE)
+      verify(channel, times(2)).enableOpWrite(eventLoop)
       verify(channel, never()).close()
     }
 
@@ -351,7 +351,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       verify(callback).consume(request.getStream)
       assert(connection.responses.dequeue() === response("chunk1"))
       assert(!connection.responses.nonEmpty())
-      verify(eventLoop, times(1)).enableInterestSet(key, SelectionKey.OP_WRITE)
+      verify(channel).enableOpWrite(eventLoop)
     }
 
     "fail with InfluentIOException" when {

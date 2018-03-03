@@ -113,6 +113,39 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
     }
   }
 
+  "enableOpRead" should {
+    "enable OP_READ" in {
+      val channel = new NioTcpChannel(mock[SocketChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.enableOpRead(eventLoop) === ())
+      verify(eventLoop).enableInterestSet(key, SelectionKey.OP_READ)
+    }
+  }
+
+  "enableOpWrite" should {
+    "enable OP_WRITE" in {
+      val channel = new NioTcpChannel(mock[SocketChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.enableOpWrite(eventLoop) === ())
+      verify(eventLoop).enableInterestSet(key, SelectionKey.OP_WRITE)
+    }
+  }
+
+  "disableOpWrite" should {
+    "disable OP_WRITE" in {
+      val channel = new NioTcpChannel(mock[SocketChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.disableOpWrite(eventLoop) === ())
+      verify(eventLoop).disableInterestSet(key, SelectionKey.OP_WRITE)
+    }
+  }
+
   "close" should {
     "close the socket channel" in {
       val socketChannel = mock[SocketChannel]

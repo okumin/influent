@@ -18,12 +18,14 @@ package influent.internal.nio;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A wrapped {@code SelectableChannel}.
  */
 abstract class NioSelectableChannel {
-  private SelectionKey key;
+  // This may be retrieved by non-event-loop thread.
+  private final AtomicReference<SelectionKey> key = new AtomicReference<>();
 
   /**
    * @return the underlying channel
@@ -34,7 +36,7 @@ abstract class NioSelectableChannel {
    * @return the {@code SelectionKey}
    */
   final SelectionKey selectionKey() {
-    return key;
+    return key.get();
   }
 
   /**
@@ -44,9 +46,8 @@ abstract class NioSelectableChannel {
    * @throws IllegalStateException when this method is invoked more than once
    */
   final void onRegistered(final SelectionKey key) {
-    if (this.key != null) {
+    if (!this.key.compareAndSet(null, key)) {
       throw new IllegalStateException("This channel is registered more than once.");
     }
-    this.key = key;
   }
 }

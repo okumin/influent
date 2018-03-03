@@ -105,7 +105,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onWritable(final SelectionKey key) {
     if (!handshake(key)) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+        channel.enableOpWrite(eventLoop);
       }
       return;
     }
@@ -129,7 +129,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onReadable(final SelectionKey key) {
     if (!handshake(key)) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+        channel.enableOpWrite(eventLoop);
       }
       return;
     }
@@ -182,7 +182,7 @@ final class NioSslForwardConnection implements NioAttachment {
       packer.packString(chunk);
       final ByteBuffer buffer = packer.toMessageBuffer().sliceAsByteBuffer();
       responses.enqueue(buffer);
-      eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+      channel.enableOpWrite(eventLoop);
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }
@@ -248,7 +248,7 @@ final class NioSslForwardConnection implements NioAttachment {
         }
       }
       if (outboundNetworkBuffers.isEmpty() && key.isWritable()) {
-        eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
+        channel.disableOpWrite(eventLoop);
       }
       return outboundNetworkBuffers.isEmpty();
     } catch (final SSLException e) {
