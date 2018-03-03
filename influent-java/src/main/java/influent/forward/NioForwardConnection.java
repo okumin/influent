@@ -114,11 +114,11 @@ final class NioForwardConnection implements NioAttachment {
       node = security.findNode(((InetSocketAddress) channel.getRemoteAddress()).getAddress());
       state = ConnectionState.HELO;
       pingDecoder = new MsgPackPingDecoder(this.security, node.orElse(null), nonce, userAuth);
-      channel.register(eventLoop, SelectionKey.OP_WRITE, this);
+      channel.register(eventLoop, false, true, this);
       responses.enqueue(generateHelo());
     } else {
       state = ConnectionState.ESTABLISHED;
-      channel.register(eventLoop, SelectionKey.OP_READ, this);
+      channel.register(eventLoop, true, false, this);
     }
   }
 

@@ -140,10 +140,19 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * This method is thread-safe.
    *
    * @param eventLoop the {@code NioEventLoop}
-   * @param ops the interest set
+   * @param opReadEnabled whether OP_READ is enabled or not
+   * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
+  public void register(final NioEventLoop eventLoop, final boolean opReadEnabled,
+      final boolean opWriteEnabled, final NioAttachment attachment) {
+    int ops = 0;
+    if (opReadEnabled) {
+      ops |= SelectionKey.OP_READ;
+    }
+    if (opWriteEnabled) {
+      ops |= SelectionKey.OP_WRITE;
+    }
     eventLoop.register(this, ops, attachment);
   }
 

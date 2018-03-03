@@ -92,7 +92,7 @@ final class NioSslForwardConnection implements NioAttachment {
       final NioTcpConfig tcpConfig) {
     this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
 
-    channel.register(eventLoop, SelectionKey.OP_READ, this);
+    channel.register(eventLoop, true, false, this);
   }
 
   /**
