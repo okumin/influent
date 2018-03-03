@@ -16,8 +16,6 @@
 
 package influent.internal.nio;
 
-import java.nio.channels.SelectionKey;
-
 import influent.exception.InfluentIOException;
 
 /**
@@ -28,11 +26,10 @@ public interface NioAttachment extends AutoCloseable {
    * Handles a read event.
    * {@code NioAttachment} is closed when {@code onReadable} throws an exception.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onReadable} is not supported
    */
-  default void onReadable(final SelectionKey key) {
+  default void onReadable() {
     throw new UnsupportedOperationException(this + " does not support onReadable");
   }
 
@@ -40,11 +37,10 @@ public interface NioAttachment extends AutoCloseable {
    * Handles a write event.
    * {@code NioAttachment} is closed when {@code onWritable} throws an exception.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onWritable} is not supported
    */
-  default void onWritable(final SelectionKey key) {
+  default void onWritable() {
     throw new UnsupportedOperationException(this + " does not support onWritable");
   }
 
@@ -63,11 +59,10 @@ public interface NioAttachment extends AutoCloseable {
    * Handles a connect event.
    * {@code NioAttachment} is closed when {@code onConnectable} throws an exception.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onConnectable} is not supported
    */
-  default void onConnectable(final SelectionKey key) {
+  default void onConnectable() {
     throw new UnsupportedOperationException(this + " does not support onConnectable");
   }
 

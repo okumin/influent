@@ -18,7 +18,6 @@ package influent.forward;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,11 +64,9 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   /**
    * Sends heartbeat responses.
    * {@code NioUdpHeartbeatServer#onWritable} never fails.
-   *
-   * @param key the {@code SelectionKey}
    */
   @Override
-  public void onWritable(final SelectionKey key) {
+  public void onWritable() {
     if (sendResponses()) {
       channel.disableOpWrite(eventLoop);
     }
@@ -95,11 +92,9 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   /**
    * Receives heartbeat requests.
    * {@code NioUdpHeartbeatServer#onReadable} never fails.
-   *
-   * @param key the {@code SelectionKey}
    */
   @Override
-  public void onReadable(final SelectionKey key) {
+  public void onReadable() {
     while (true) {
       receiveBuffer.rewind();
       try {

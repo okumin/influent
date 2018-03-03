@@ -126,16 +126,16 @@ interface NioEventLoopTask {
 
         try {
           if (key.isWritable()) {
-            attachment.onWritable(key);
+            attachment.onWritable();
           }
           if (key.isReadable()) {
-            attachment.onReadable(key);
+            attachment.onReadable();
           }
           if (key.isAcceptable()) {
             attachment.onAcceptable();
           }
           if (key.isConnectable()) {
-            attachment.onConnectable(key);
+            attachment.onConnectable();
           }
         } catch (final CancelledKeyException e) {
           logger.debug("The key has already been cancelled.");
