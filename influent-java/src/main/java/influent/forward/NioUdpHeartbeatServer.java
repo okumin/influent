@@ -59,7 +59,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
    */
   NioUdpHeartbeatServer(final SocketAddress localAddress, final NioEventLoop eventLoop) {
     this(new NioUdpChannel(localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE), eventLoop);
-    channel.register(eventLoop, SelectionKey.OP_READ, this);
+    channel.register(eventLoop, true, false, this);
   }
 
   /**
@@ -71,7 +71,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   @Override
   public void onWritable(final SelectionKey key) {
     if (sendResponses()) {
-      eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
+      channel.disableOpWrite(eventLoop);
     }
   }
 
@@ -116,7 +116,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
       }
     }
 
-    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+    channel.enableOpWrite(eventLoop);
   }
 
   /**

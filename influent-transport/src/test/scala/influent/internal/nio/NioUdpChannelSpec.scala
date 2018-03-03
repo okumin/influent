@@ -128,8 +128,36 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       val ops = SelectionKey.OP_READ | SelectionKey.OP_WRITE
       val attachment = mock[NioAttachment]
 
-      assert(channel.register(eventLoop, ops, attachment) === ())
-      verify(eventLoop).register(channel, ops, attachment)
+      assert(channel.register(eventLoop, true, false, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_READ, attachment)
+
+      assert(channel.register(eventLoop, false, true, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_WRITE, attachment)
+
+      assert(channel.register(eventLoop, true, true, attachment) === ())
+      verify(eventLoop).register(channel, SelectionKey.OP_READ | SelectionKey.OP_WRITE, attachment)
+    }
+  }
+
+  "enableOpWrite" should {
+    "enable OP_WRITE" in {
+      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.enableOpWrite(eventLoop) === ())
+      verify(eventLoop).enableInterestSet(key, SelectionKey.OP_WRITE)
+    }
+  }
+
+  "disableOpWrite" should {
+    "disable OP_WRITE" in {
+      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.disableOpWrite(eventLoop) === ())
+      verify(eventLoop).disableInterestSet(key, SelectionKey.OP_WRITE)
     }
   }
 
