@@ -20,7 +20,6 @@ import influent.exception.InfluentIOException
 import influent.internal.nio.{NioEventLoop, NioUdpChannel}
 import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.ByteBuffer
-import java.nio.channels.SelectionKey
 import java.util.Optional
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
@@ -49,8 +48,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
         when(channel.send(response, target)).thenReturn(true)
       }
 
-      val key = mock[SelectionKey]
-      assert(server.onWritable(key) === ())
+      assert(server.onWritable() === ())
 
       targets.foreach { target =>
         verify(channel).send(response, target)
@@ -74,8 +72,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
         when(channel.send(response, targets(0))).thenReturn(true)
         when(channel.send(response, targets(1))).thenReturn(false)
 
-        val key = mock[SelectionKey]
-        assert(server.onWritable(key) === ())
+        assert(server.onWritable() === ())
 
         verify(channel).send(response, targets(0))
         verify(channel).send(response, targets(1))
@@ -101,8 +98,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
           .thenThrow(new InfluentIOException()).thenReturn(true)
         when(channel.send(response, targets(2))).thenReturn(true)
 
-        val key = mock[SelectionKey]
-        assert(server.onWritable(key) === ())
+        assert(server.onWritable() === ())
 
         verify(channel).send(response, targets(0))
         verify(channel, times(2)).send(response, targets(1))
@@ -124,8 +120,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       when(channel.receive(ByteBuffer.allocate(1)))
         .thenReturn(Optional.of(source1), Optional.of(source2), Optional.empty())
 
-      val key = mock[SelectionKey]
-      assert(server.onReadable(key) === ())
+      assert(server.onReadable() === ())
 
       verify(channel, times(3)).receive(ByteBuffer.allocate(1))
       assert(server.replyTo.dequeue() === source1)
@@ -146,7 +141,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
           .thenThrow(new InfluentIOException())
           .thenReturn(Optional.of(source), Optional.empty())
 
-        assert(server.onReadable(mock[SelectionKey]) === ())
+        assert(server.onReadable() === ())
         verify(channel, times(3)).receive(ByteBuffer.allocate(1))
         assert(server.replyTo.dequeue() === source)
         assert(!server.replyTo.nonEmpty())

@@ -218,12 +218,10 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val task = new NioEventLoopTask.Select(selector)
       task.run()
 
-      verify(attachment).onWritable(key1)
-      verify(attachment).onReadable(key2)
+      verify(attachment, times(2)).onWritable()
+      verify(attachment, times(2)).onReadable()
       verify(attachment).onAcceptable()
-      verify(attachment).onConnectable(key4)
-      verify(attachment).onWritable(key5)
-      verify(attachment).onReadable(key5)
+      verify(attachment).onConnectable()
       verifyNoMoreInteractions(attachment)
       assert(keys.size() === 0)
     }
@@ -261,7 +259,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       when(key1.isReadable).thenReturn(false)
       when(key1.isAcceptable).thenReturn(false)
       when(key1.isConnectable).thenReturn(false)
-      when(attachment.onWritable(key1)).thenThrow(new InfluentIOException())
+      when(attachment.onWritable()).thenThrow(new InfluentIOException())
 
       val key2 = mock[SelectionKey]
       when(key2.attachment()).thenReturn(attachment, Nil: _*)
@@ -281,9 +279,9 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val task = new NioEventLoopTask.Select(selector)
       task.run()
 
-      verify(attachment).onWritable(key1)
+      verify(attachment).onWritable()
       verify(attachment).close()
-      verify(attachment).onReadable(key2)
+      verify(attachment).onReadable()
       verifyNoMoreInteractions(attachment)
       assert(keys.size() === 0)
     }

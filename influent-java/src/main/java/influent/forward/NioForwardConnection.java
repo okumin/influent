@@ -19,7 +19,6 @@ package influent.forward;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -125,11 +124,10 @@ final class NioForwardConnection implements NioAttachment {
   /**
    * Handles a write event.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException if some IO error occurs
    */
   @Override
-  public void onWritable(final SelectionKey key) {
+  public void onWritable() {
     if (sendResponses()) {
       channel.disableOpWrite(eventLoop);
       if (state == ConnectionState.HELO) {
@@ -156,21 +154,20 @@ final class NioForwardConnection implements NioAttachment {
   /**
    * Handles a read event.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException if some IO error occurs
    */
   @Override
-  public void onReadable(final SelectionKey key) {
+  public void onReadable() {
     switch (state) {
       case PINGPONG:
-        receivePing(key, result -> {
+        receivePing(result -> {
           responses.enqueue(generatePong(result));
           channel.enableOpWrite(eventLoop);
           state = ConnectionState.ESTABLISHED;
         });
         break;
       case ESTABLISHED:
-        receiveRequests(key);
+        receiveRequests();
         break;
     }
     if (!channel.isOpen()) {
@@ -178,7 +175,7 @@ final class NioForwardConnection implements NioAttachment {
     }
   }
 
-  private void receivePing(final SelectionKey key, Consumer<CheckPingResult> checkPingResultConsumer) {
+  private void receivePing(Consumer<CheckPingResult> checkPingResultConsumer) {
     // TODO: optimize
     final Supplier<ByteBuffer> supplier = () -> {
       final ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -201,7 +198,7 @@ final class NioForwardConnection implements NioAttachment {
     }
   }
 
-  private void receiveRequests(final SelectionKey key) {
+  private void receiveRequests() {
     // TODO: optimize
     final Supplier<ByteBuffer> supplier = () -> {
       final ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -222,7 +219,7 @@ final class NioForwardConnection implements NioAttachment {
           );
           callback.consume(result.getStream()).thenRun(() -> {
             // Executes on user's callback thread since the queue never block.
-            result.getOption().getChunk().ifPresent(chunk -> completeTask(key, chunk));
+            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
             logger.debug("Completed the task. chunk_id = {}.", result.getOption());
           });
         });
@@ -235,7 +232,7 @@ final class NioForwardConnection implements NioAttachment {
   }
 
   // This method is thread-safe.
-  private void completeTask(final SelectionKey key, final String chunk) {
+  private void completeTask(final String chunk) {
     try {
       final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
       packer.packMapHeader(1);

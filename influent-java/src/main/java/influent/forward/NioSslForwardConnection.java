@@ -19,7 +19,6 @@ package influent.forward;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -98,12 +97,11 @@ final class NioSslForwardConnection implements NioAttachment {
   /**
    * Handles a write event.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException if some IO error occurs
    */
   @Override
-  public void onWritable(final SelectionKey key) {
-    if (!handshake(key)) {
+  public void onWritable() {
+    if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
         channel.enableOpWrite(eventLoop);
       }
@@ -112,7 +110,7 @@ final class NioSslForwardConnection implements NioAttachment {
 
     while (responses.nonEmpty()) {
       final ByteBuffer head = responses.dequeue();
-      wrapAndSend(key, head);
+      wrapAndSend(head);
     }
     if (!channel.isOpen()) {
       close();
@@ -122,25 +120,24 @@ final class NioSslForwardConnection implements NioAttachment {
   /**
    * Handles a read event.
    *
-   * @param key the {@code SelectionKey}
    * @throws InfluentIOException if some IO error occurs
    */
   @Override
-  public void onReadable(final SelectionKey key) {
-    if (!handshake(key)) {
+  public void onReadable() {
+    if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
         channel.enableOpWrite(eventLoop);
       }
       return;
     }
 
-    receiveRequests(key);
+    receiveRequests();
     if (!channel.isOpen()) {
       close();
     }
   }
 
-  private void receiveRequests(final SelectionKey key) {
+  private void receiveRequests() {
     // TODO: optimize
     final Supplier<ByteBuffer> supplier = () -> {
       final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
@@ -161,7 +158,7 @@ final class NioSslForwardConnection implements NioAttachment {
           );
           callback.consume(result.getStream()).thenRun(() -> {
             // Executes on user's callback thread since the queue never block.
-            result.getOption().getChunk().ifPresent(chunk -> completeTask(key, chunk));
+            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
             logger.debug("Completed the task. chunk_id = {}.", result.getOption());
           });
         });
@@ -174,7 +171,7 @@ final class NioSslForwardConnection implements NioAttachment {
   }
 
   // This method is thread-safe.
-  private void completeTask(final SelectionKey key, final String chunk) {
+  private void completeTask(final String chunk) {
     try {
       final MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
       packer.packMapHeader(1);
@@ -189,7 +186,7 @@ final class NioSslForwardConnection implements NioAttachment {
   }
 
   // true when the handshake is completed
-  private boolean handshake(final SelectionKey key) {
+  private boolean handshake() {
     final SSLEngineResult.HandshakeStatus handshakeStatus = engine.getHandshakeStatus();
     logger.debug("Current handshake status: " + handshakeStatus);
     if (!isHandshaking(handshakeStatus)) {
@@ -198,9 +195,9 @@ final class NioSslForwardConnection implements NioAttachment {
 
     switch (handshakeStatus) {
       case NEED_UNWRAP:
-        return receiveAndUnwrap(ByteBuffer.allocate(1024 * 1024)) && handshake(key);
+        return receiveAndUnwrap(ByteBuffer.allocate(1024 * 1024)) && handshake();
       case NEED_WRAP:
-        return wrapAndSend(key, ByteBuffer.allocate(0)) && handshake(key);
+        return wrapAndSend(ByteBuffer.allocate(0)) && handshake();
       case NEED_TASK:
         while (true) {
           final Runnable task = engine.getDelegatedTask();
@@ -209,7 +206,7 @@ final class NioSslForwardConnection implements NioAttachment {
           }
           task.run();
         }
-        return handshake(key);
+        return handshake();
       case FINISHED:
       case NOT_HANDSHAKING:
       default:
@@ -217,7 +214,7 @@ final class NioSslForwardConnection implements NioAttachment {
     }
   }
 
-  private boolean wrapAndSend(final SelectionKey key, final ByteBuffer src) {
+  private boolean wrapAndSend(final ByteBuffer src) {
     try {
       final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
       final SSLEngineResult result = engine.wrap(src, buffer);
@@ -247,7 +244,7 @@ final class NioSslForwardConnection implements NioAttachment {
           outboundNetworkBuffers.poll();
         }
       }
-      if (outboundNetworkBuffers.isEmpty() && key.isWritable()) {
+      if (outboundNetworkBuffers.isEmpty()) {
         channel.disableOpWrite(eventLoop);
       }
       return outboundNetworkBuffers.isEmpty();
