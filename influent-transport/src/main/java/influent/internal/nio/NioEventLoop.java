@@ -118,7 +118,7 @@ public final class NioEventLoop implements Runnable {
    * @param key the {@code SelectionKey}
    * @param ops the interest set to be enabled
    */
-  public void enableInterestSet(final SelectionKey key, final int ops) {
+  void enableInterestSet(final SelectionKey key, final int ops) {
     addTask(new NioEventLoopTask.UpdateInterestSet(key, current -> current | ops));
   }
 
@@ -129,7 +129,7 @@ public final class NioEventLoop implements Runnable {
    * @param key the {@code SelectionKey}
    * @param ops the interest set to be disabled
    */
-  public void disableInterestSet(final SelectionKey key, final int ops) {
+  void disableInterestSet(final SelectionKey key, final int ops) {
     addTask(new NioEventLoopTask.UpdateInterestSet(key, current -> current & ~ops));
   }
 

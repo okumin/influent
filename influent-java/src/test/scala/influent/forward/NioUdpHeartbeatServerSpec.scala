@@ -55,7 +55,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       targets.foreach { target =>
         verify(channel).send(response, target)
       }
-      verify(eventLoop).disableInterestSet(key, SelectionKey.OP_WRITE)
+      verify(channel).disableOpWrite(eventLoop)
       verifyNoMoreInteractions(eventLoop)
     }
 
@@ -107,6 +107,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
         verify(channel).send(response, targets(0))
         verify(channel, times(2)).send(response, targets(1))
         verify(channel).send(response, targets(2))
+        verify(channel).disableOpWrite(eventLoop)
         verifyNoMoreInteractions(channel)
       }
     }
@@ -130,7 +131,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       assert(server.replyTo.dequeue() === source1)
       assert(server.replyTo.dequeue() === source2)
       assert(!server.replyTo.nonEmpty())
-      verify(eventLoop).enableInterestSet(key, SelectionKey.OP_WRITE)
+      verify(channel).enableOpWrite(eventLoop)
       verifyNoMoreInteractions(eventLoop)
     }
 

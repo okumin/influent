@@ -71,7 +71,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   @Override
   public void onWritable(final SelectionKey key) {
     if (sendResponses()) {
-      eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
+      channel.disableOpWrite(eventLoop);
     }
   }
 
@@ -116,7 +116,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
       }
     }
 
-    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+    channel.enableOpWrite(eventLoop);
   }
 
   /**

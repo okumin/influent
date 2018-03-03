@@ -133,6 +133,28 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     }
   }
 
+  "enableOpWrite" should {
+    "enable OP_WRITE" in {
+      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.enableOpWrite(eventLoop) === ())
+      verify(eventLoop).enableInterestSet(key, SelectionKey.OP_WRITE)
+    }
+  }
+
+  "disableOpWrite" should {
+    "disable OP_WRITE" in {
+      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val key = mock[SelectionKey]
+      val eventLoop = mock[NioEventLoop]
+      channel.onRegistered(key)
+      assert(channel.disableOpWrite(eventLoop) === ())
+      verify(eventLoop).disableInterestSet(key, SelectionKey.OP_WRITE)
+    }
+  }
+
   "close" should {
     "close the datagram channel" in {
       val datagramChannel = mock[DatagramChannel]

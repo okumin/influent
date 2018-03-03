@@ -24,6 +24,7 @@ import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -134,6 +135,26 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
    */
   public void register(final NioEventLoop eventLoop, final int ops, final NioAttachment attachment) {
     eventLoop.register(this, ops, attachment);
+  }
+
+  /**
+   * Enables OP_WRITE.
+   * Operations are done asynchronously.
+   *
+   * @param eventLoop the {@code NioEventLoop}
+   */
+  public void enableOpWrite(final NioEventLoop eventLoop) {
+    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+  }
+
+  /**
+   * Disables OP_WRITE.
+   * Operations are done asynchronously.
+   *
+   * @param eventLoop the {@code NioEventLoop}
+   */
+  public void disableOpWrite(final NioEventLoop eventLoop) {
+    eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
   }
 
   /**
