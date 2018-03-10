@@ -179,8 +179,7 @@ final class NioForwardConnection implements NioAttachment {
     // TODO: optimize
     final Supplier<ByteBuffer> supplier = () -> {
       final ByteBuffer buffer = ByteBuffer.allocate(1024);
-      final int bytes = channel.read(buffer);
-      if (bytes <= 0) {
+      if (!channel.read(buffer)) {
         return null;
       }
       buffer.flip();
@@ -202,8 +201,7 @@ final class NioForwardConnection implements NioAttachment {
     // TODO: optimize
     final Supplier<ByteBuffer> supplier = () -> {
       final ByteBuffer buffer = ByteBuffer.allocate(1024);
-      final int bytes = channel.read(buffer);
-      if (bytes <= 0) {
+      if (!channel.read(buffer)) {
         return null;
       }
       buffer.flip();

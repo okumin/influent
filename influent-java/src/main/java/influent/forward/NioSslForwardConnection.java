@@ -236,8 +236,7 @@ final class NioSslForwardConnection implements NioAttachment {
       }
       while (!outboundNetworkBuffers.isEmpty()) {
         final ByteBuffer head = outboundNetworkBuffers.peek();
-        final int bytes = channel.write(head);
-        if (bytes == 0) {
+        if (!channel.write(head)) {
           break;
         }
         if (!head.hasRemaining()) {
@@ -265,7 +264,7 @@ final class NioSslForwardConnection implements NioAttachment {
         inboundNetworkBuffer.position(inboundNetworkBuffer.limit());
         inboundNetworkBuffer.limit(inboundNetworkBuffer.capacity());
       }
-      final int bytes = channel.read(inboundNetworkBuffer);
+      final boolean isRead = channel.read(inboundNetworkBuffer);
       inboundNetworkBuffer.limit(inboundNetworkBuffer.position());
       inboundNetworkBuffer.reset();
       if (!inboundNetworkBuffer.hasRemaining()) {
@@ -281,7 +280,7 @@ final class NioSslForwardConnection implements NioAttachment {
             }
             break;
           case BUFFER_UNDERFLOW:
-            return bytes != 0;
+            return isRead;
           case CLOSED:
             close();
             if (dst.position() == start) {
