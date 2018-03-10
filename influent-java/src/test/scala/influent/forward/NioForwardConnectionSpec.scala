@@ -66,11 +66,11 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       val channel = mock[NioTcpChannel]
       buffers.foreach { buffer =>
         when(channel.write(buffer))
-          .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-            override def answer(a: ByteBuffer): Int = {
+          .thenAnswer(AdditionalAnswers.answer(new Answer1[Boolean, ByteBuffer] {
+            override def answer(a: ByteBuffer): Boolean = {
               val size = a.remaining()
               a.position(a.limit())
-              size
+              size > 0
             }
           }))
       }
@@ -94,19 +94,19 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val buffers = Seq(response("mofu1"), response("mofu2"), response("mofu3"))
         val channel = mock[NioTcpChannel]
         when(channel.write(buffers(0)))
-          .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-            override def answer(a: ByteBuffer): Int = {
+          .thenAnswer(AdditionalAnswers.answer(new Answer1[Boolean, ByteBuffer] {
+            override def answer(a: ByteBuffer): Boolean = {
               val size = a.remaining()
               a.position(a.limit())
-              size
+              size > 0
             }
           }))
         when(channel.write(buffers(1)))
-          .thenAnswer(AdditionalAnswers.answer(new Answer1[Int, ByteBuffer] {
-            override def answer(a: ByteBuffer): Int = {
+          .thenAnswer(AdditionalAnswers.answer(new Answer1[Boolean, ByteBuffer] {
+            override def answer(a: ByteBuffer): Boolean = {
               val size = a.remaining() - 1
               a.position(a.limit() - 1)
-              size
+              size > 0
             }
           }))
 

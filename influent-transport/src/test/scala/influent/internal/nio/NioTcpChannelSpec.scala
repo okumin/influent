@@ -32,7 +32,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       when(socketChannel.write(src)).thenReturn(4)
       val channel = new NioTcpChannel(socketChannel)
 
-      assert(channel.write(src) === 4)
+      assert(channel.write(src) === true)
       verify(socketChannel).write(src)
       verify(socketChannel, never()).close()
     }
@@ -58,7 +58,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       when(socketChannel.read(dst)).thenReturn(4)
       val channel = new NioTcpChannel(socketChannel)
 
-      assert(channel.read(dst) === 4)
+      assert(channel.read(dst) === true)
       verify(socketChannel, never()).close()
     }
 
@@ -69,19 +69,29 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         when(socketChannel.read(dst)).thenReturn(0)
         val channel = new NioTcpChannel(socketChannel)
 
-        assert(channel.read(dst) === 0)
+        assert(channel.read(dst) === false)
         verify(socketChannel, never()).close()
       }
     }
 
-    "return -1" when {
+    "close channel" when {
+      "the channel returns -1" in {
+        val dst = ByteBuffer.allocate(8)
+        val socketChannel = mock[SocketChannel]
+        when(socketChannel.read(dst)).thenReturn(-1)
+        val channel = new NioTcpChannel(socketChannel)
+
+        assert(channel.read(dst) === false)
+        verify(socketChannel).close()
+      }
+
       "the stream is completed" in {
         val dst = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.read(dst)).thenThrow(new ClosedChannelException())
         val channel = new NioTcpChannel(socketChannel)
 
-        assert(channel.read(dst) === -1)
+        assert(channel.read(dst) === false)
         verify(socketChannel).close()
       }
     }

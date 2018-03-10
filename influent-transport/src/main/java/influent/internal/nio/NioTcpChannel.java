@@ -91,12 +91,12 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * Writes bytes to the socket buffer.
    *
    * @param src the buffer
-   * @return the written size
+   * @return true when some bytes are written
    * @throws InfluentIOException if some IO error occurs
    */
-  public int write(final ByteBuffer src) {
+  public boolean write(final ByteBuffer src) {
     try {
-      return channel.write(src);
+      return channel.write(src) > 0;
     } catch (final NotYetConnectedException | AsynchronousCloseException e) {
       // ClosedByInterruptException is an AsynchronousCloseException
       throw new AssertionError(e);
@@ -112,22 +112,22 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * Reads bytes from the socket buffer.
    *
    * @param dst the buffer
-   * @return the read size -1 when the stream completes
+   * @return true when some bytes are read
    * @throws InfluentIOException if some IO error occurs
    */
-  public int read(final ByteBuffer dst) {
+  public boolean read(final ByteBuffer dst) {
     try {
       final int readSize = channel.read(dst);
-      if (readSize < 0) {
+      if (readSize == -1) {
         close();
       }
-      return readSize;
+      return readSize > 0;
     } catch (final NotYetConnectedException | AsynchronousCloseException e) {
       // ClosedByInterruptException is an AsynchronousCloseException
       throw new AssertionError(e);
     } catch (final ClosedChannelException e) {
       close();
-      return -1;
+      return false;
     } catch (final IOException e) {
       close();
       final String message = "This channel is broken. remote address = " + getRemoteAddress();
