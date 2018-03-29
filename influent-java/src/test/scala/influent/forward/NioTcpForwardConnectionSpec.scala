@@ -35,7 +35,7 @@ import org.msgpack.value.impl.ImmutableStringValueImpl
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
-class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
+class NioTcpForwardConnectionSpec extends WordSpec with MockitoSugar {
   private[this] def success: CompletableFuture[Void] = {
     val future = new CompletableFuture[Void]()
     future.complete(null)
@@ -57,8 +57,8 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
   }
 
   "onWritable" should {
-    def createConnection(channel: NioTcpChannel, eventLoop: NioEventLoop): NioForwardConnection = {
-      new NioForwardConnection(channel, eventLoop, mock[ForwardCallback], Int.MaxValue, mock[ForwardSecurity])
+    def createConnection(channel: NioTcpChannel, eventLoop: NioEventLoop): NioTcpForwardConnection = {
+      new NioTcpForwardConnection(channel, eventLoop, mock[ForwardCallback], Int.MaxValue, mock[ForwardSecurity])
     }
 
     "send responses" in {
@@ -187,7 +187,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
       val eventLoop = mock[NioEventLoop]
       val security = mock[ForwardSecurity]
-      val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+      val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
       assert(connection.onReadable() === ())
 
       requests.filter(_.isPresent).foreach { request =>
@@ -229,7 +229,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
       val eventLoop = mock[NioEventLoop]
       val security = mock[ForwardSecurity]
-      val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+      val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
       assert(connection.onReadable() === ())
       verify(callback).consume(request.getStream)
       assert(!connection.responses.nonEmpty())
@@ -260,7 +260,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
         val eventLoop = mock[NioEventLoop]
         val security = mock[ForwardSecurity]
-        val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+        val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
         assert(connection.onReadable() === ())
         verify(callback).consume(request.getStream)
         verifyZeroInteractions(eventLoop)
@@ -278,7 +278,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val callback = mock[ForwardCallback]
         val decoder = mock[MsgpackForwardRequestDecoder]
         val security = mock[ForwardSecurity]
-        val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+        val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
 
         assert(connection.onReadable() === ())
         verify(channel).close()
@@ -306,7 +306,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
         val eventLoop = mock[NioEventLoop]
         val security = mock[ForwardSecurity]
-        val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+        val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
         assert(connection.onReadable() === ())
         verify(callback).consume(request.getStream)
 
@@ -337,7 +337,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
       val eventLoop = mock[NioEventLoop]
       val security = mock[ForwardSecurity]
-      val connection = new NioForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
+      val connection = new NioTcpForwardConnection(channel, eventLoop, callback, unpacker, decoder, security)
       assert(connection.onReadable() === ())
 
       verify(callback).consume(request.getStream)
@@ -354,7 +354,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         val security = mock[ForwardSecurity]
         when(unpacker.feed(any[Supplier[ByteBuffer]], ArgumentMatchers.eq[NioTcpChannel](channel)))
           .thenThrow(new InfluentIOException())
-        val connection = new NioForwardConnection(
+        val connection = new NioTcpForwardConnection(
           channel, mock[NioEventLoop], callback, unpacker, mock[MsgpackForwardRequestDecoder], security
         )
 
@@ -368,7 +368,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
     "closes the channel" in {
       val channel = mock[NioTcpChannel]
       val security = mock[ForwardSecurity]
-      val connection = new NioForwardConnection(
+      val connection = new NioTcpForwardConnection(
         channel, mock[NioEventLoop], mock[ForwardCallback], Int.MaxValue, security
       )
       assert(connection.close() === ())

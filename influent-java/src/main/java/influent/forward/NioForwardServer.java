@@ -63,7 +63,7 @@ final class NioForwardServer implements ForwardServer {
           channelConfig.createSSLEngine(), chunkSizeLimit, tcpConfig, security
       );
     } else {
-      channelFactory = (socketChannel) -> new NioForwardConnection(
+      channelFactory = (socketChannel) -> new NioTcpForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, tcpConfig, security
       );
     }

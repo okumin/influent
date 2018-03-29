@@ -41,8 +41,8 @@ import influent.internal.util.ThreadSafeQueue;
 /**
  * A connection for forward protocol.
  */
-final class NioForwardConnection implements NioAttachment {
-  private static final Logger logger = LoggerFactory.getLogger(NioForwardConnection.class);
+final class NioTcpForwardConnection implements NioAttachment {
+  private static final Logger logger = LoggerFactory.getLogger(NioTcpForwardConnection.class);
   private static final String ACK_KEY = "ack";
 
   private final NioTcpChannel channel;
@@ -65,9 +65,9 @@ final class NioForwardConnection implements NioAttachment {
 
   private ConnectionState state;
 
-  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final MsgpackStreamUnpacker unpacker,
-      final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
+  NioTcpForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
+                          final ForwardCallback callback, final MsgpackStreamUnpacker unpacker,
+                          final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
     this.channel = channel;
     this.eventLoop = eventLoop;
     this.callback = callback;
@@ -77,25 +77,25 @@ final class NioForwardConnection implements NioAttachment {
     state = ConnectionState.ESTABLISHED;
   }
 
-  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final long chunkSizeLimit, final ForwardSecurity security) {
+  NioTcpForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
+                          final ForwardCallback callback, final long chunkSizeLimit, final ForwardSecurity security) {
     this(channel, eventLoop, callback, new MsgpackStreamUnpacker(chunkSizeLimit),
         new MsgpackForwardRequestDecoder(), security);
   }
 
   /**
-   * Constructs a new {@code NioForwardConnection}.
+   * Constructs a new {@code NioTcpForwardConnection}.
    *
    * @param socketChannel the inbound channel
-   * @param eventLoop the {@code NioEventLoop} to which this {@code NioForwardConnection} belongs
+   * @param eventLoop the {@code NioEventLoop} to which this {@code NioTcpForwardConnection} belongs
    * @param callback the callback to handle requests
    * @param chunkSizeLimit the allowable size of a chunk
    * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
-  NioForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final long chunkSizeLimit, final NioTcpConfig tcpConfig,
-      final ForwardSecurity security) {
+  NioTcpForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
+                          final ForwardCallback callback, final long chunkSizeLimit, final NioTcpConfig tcpConfig,
+                          final ForwardSecurity security) {
     this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, chunkSizeLimit, security);
 
     if (this.security.isEnabled()) {
@@ -305,11 +305,11 @@ final class NioForwardConnection implements NioAttachment {
   @Override
   public void close() {
     channel.close();
-    logger.debug("NioForwardConnection bound with {} closed.", channel.getRemoteAddress());
+    logger.debug("NioTcpForwardConnection bound with {} closed.", channel.getRemoteAddress());
   }
 
   @Override
   public String toString() {
-    return "NioForwardConnection(" + channel.getRemoteAddress() + ")";
+    return "NioTcpForwardConnection(" + channel.getRemoteAddress() + ")";
   }
 }
