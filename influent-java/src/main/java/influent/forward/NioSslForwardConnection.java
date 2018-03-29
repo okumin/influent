@@ -17,11 +17,17 @@
 package influent.forward;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.channels.SocketChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.Queue;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -51,8 +57,20 @@ final class NioSslForwardConnection implements NioAttachment {
   private final SSLEngine engine;
   private final MsgpackStreamUnpacker unpacker;
   private final MsgpackForwardRequestDecoder decoder;
+  private final ForwardSecurity security;
+  private MsgPackPingDecoder pingDecoder;
+  private Optional<ForwardClientNode> node;
 
   private final ThreadSafeQueue<ByteBuffer> responses = new ThreadSafeQueue<>();
+
+  private final byte[] nonce = new byte[16];
+  private final byte[] userAuth = new byte[16];
+
+  enum ConnectionState {
+    HELO, PINGPONG, ESTABLISHED
+  }
+
+  private ConnectionState state;
 
   // Prepare a ByteBuffer with sufficient size
   private ByteBuffer inboundNetworkBuffer = ByteBuffer.allocate(1024 * 1024);
@@ -60,20 +78,23 @@ final class NioSslForwardConnection implements NioAttachment {
 
   NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final SSLEngine engine, final MsgpackStreamUnpacker unpacker,
-      final MsgpackForwardRequestDecoder decoder) {
+      final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
     this.channel = channel;
     this.eventLoop = eventLoop;
     this.callback = callback;
     this.engine = engine;
     this.unpacker = unpacker;
     this.decoder = decoder;
+    this.security = security;
     inboundNetworkBuffer.position(inboundNetworkBuffer.limit());
+    state = ConnectionState.ESTABLISHED;
   }
 
   NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit) {
+      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
+      final ForwardSecurity security) {
     this(channel, eventLoop, callback, engine, new MsgpackStreamUnpacker(chunkSizeLimit),
-        new MsgpackForwardRequestDecoder());
+        new MsgpackForwardRequestDecoder(), security);
   }
 
   /**
@@ -88,10 +109,31 @@ final class NioSslForwardConnection implements NioAttachment {
    */
   NioSslForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
-      final NioTcpConfig tcpConfig) {
-    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
+      final NioTcpConfig tcpConfig, final ForwardSecurity security) {
+    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit,
+        security);
 
-    channel.register(eventLoop, true, false, this);
+    if (security.isEnabled()) {
+      try {
+        // SecureRandom secureRandom = SecureRandom.getInstanceStrong();
+        // Above secureRandom may block...
+        // TODO: reuse SecureRandom instance
+        SecureRandom secureRandom = SecureRandom.getInstance("NativePRNGNonBlocking");
+        logger.debug(secureRandom.getAlgorithm());
+        secureRandom.nextBytes(nonce);
+        secureRandom.nextBytes(userAuth);
+      } catch (NoSuchAlgorithmException e) {
+        e.printStackTrace();
+      }
+      node = security.findNode(((InetSocketAddress) channel.getRemoteAddress()).getAddress());
+      state = ConnectionState.HELO;
+      pingDecoder = new MsgPackPingDecoder(this.security, node.orElse(null), nonce, userAuth);
+      channel.register(eventLoop, false, true, this);
+      responses.enqueue(generateHelo());
+    } else {
+      state = ConnectionState.ESTABLISHED;
+      channel.register(eventLoop, true, false, this);
+    }
   }
 
   /**
@@ -108,10 +150,21 @@ final class NioSslForwardConnection implements NioAttachment {
       return;
     }
 
+    boolean isWrittenAll = false;
     while (responses.nonEmpty()) {
       final ByteBuffer head = responses.dequeue();
-      wrapAndSend(head);
+      isWrittenAll = wrapAndSend(head);
     }
+
+    if (isWrittenAll) {
+      channel.disableOpWrite(eventLoop);
+      if (state == ConnectionState.HELO) {
+        state = ConnectionState.PINGPONG;
+        channel.enableOpRead(eventLoop);
+        // TODO disconnect after writing failed PONG
+      }
+    }
+
     if (!channel.isOpen()) {
       close();
     }
@@ -131,9 +184,43 @@ final class NioSslForwardConnection implements NioAttachment {
       return;
     }
 
-    receiveRequests();
+    switch (state) {
+      case PINGPONG:
+        receivePing(result -> {
+          responses.enqueue(generatePong(result));
+          channel.enableOpWrite(eventLoop);
+          state = ConnectionState.ESTABLISHED;
+        });
+        break;
+      case ESTABLISHED:
+        receiveRequests();
+        break;
+    }
     if (!channel.isOpen()) {
       close();
+    }
+  }
+
+  private void receivePing(Consumer<CheckPingResult> checkPingResultConsumer) {
+    // TODO: optimize
+    final Supplier<ByteBuffer> supplier = () -> {
+      final ByteBuffer buffer = ByteBuffer.allocate(1024);
+      receiveAndUnwrap(buffer);
+      buffer.flip();
+      if (!buffer.hasRemaining()) {
+        return null;
+      }
+      return buffer;
+    };
+    unpacker.feed(supplier, channel);
+    while (unpacker.hasNext()) {
+      try {
+        checkPingResultConsumer.accept(pingDecoder.decode(unpacker.next()));
+      } catch (final IllegalArgumentException e) {
+        logger.error(
+                "Received an invalid ping message. remote address = " + channel.getRemoteAddress(), e
+        );
+      }
     }
   }
 
@@ -303,6 +390,64 @@ final class NioSslForwardConnection implements NioAttachment {
   private static boolean isHandshaking(final SSLEngineResult.HandshakeStatus status) {
     return status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING
         && status != SSLEngineResult.HandshakeStatus.FINISHED;
+  }
+
+  // TODO Set keepalive on HELO message true/false according to ForwardServer configuration
+  //      ForwardServer.keepAliveEnabled set SO_KEEPALIVE.
+  //      See also https://github.com/okumin/influent/pull/32#discussion_r145196969
+  private ByteBuffer generateHelo() {
+    // ['HELO', options(hash)]
+    // ['HELO', {'nonce' => nonce, 'auth' => user_auth_salt/empty string, 'keepalive' => true/false}].to_msgpack
+    MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
+    try {
+      packer.packArrayHeader(2).packString("HELO").packMapHeader(3).packString("nonce")
+          .packBinaryHeader(16).writePayload(nonce).packString("auth").packBinaryHeader(16)
+          .writePayload(userAuth).packString("keepalive").packBoolean(true);
+    } catch (IOException e) {
+      logger.error("Failed to pack HELO message", e);
+    }
+
+    return packer.toMessageBuffer().sliceAsByteBuffer();
+  }
+
+  private ByteBuffer generatePong(CheckPingResult checkPingResult) {
+    // [
+    //   'PONG',
+    //   bool(authentication result),
+    //   'reason if authentication failed',
+    //   self_hostname,
+    //   sha512_hex(salt + self_hostname + nonce + sharedkey)
+    // ]
+    MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
+    try {
+      if (checkPingResult.isSucceeded()) {
+        MessageDigest md = MessageDigest.getInstance("SHA-512");
+        md.update(checkPingResult.getSharedKeySalt().getBytes());
+        md.update(security.getSelfHostname().getBytes());
+        md.update(nonce);
+        md.update(checkPingResult.getSharedKey().getBytes());
+        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
+            .packString("").packString(security.getSelfHostname())
+            .packString(generateHexString(md.digest()));
+      } else {
+        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
+            .packString(checkPingResult.getReason()).packString("").packString("");
+      }
+    } catch (IOException e) {
+      logger.error("Failed to pack PONG message", e);
+    } catch (NoSuchAlgorithmException e) {
+      logger.error(e.getMessage(), e);
+    }
+
+    return packer.toMessageBuffer().sliceAsByteBuffer();
+  }
+
+  private String generateHexString(final byte[] digest) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : digest) {
+      sb.append(String.format("%02x", b));
+    }
+    return sb.toString();
   }
 
   @Override
