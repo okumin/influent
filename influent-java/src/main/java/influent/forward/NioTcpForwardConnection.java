@@ -23,7 +23,6 @@ import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.msgpack.core.MessageBufferPacker;
@@ -36,45 +35,17 @@ import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
-import influent.internal.util.ThreadSafeQueue;
 
 /**
  * A connection for forward protocol.
  */
-final class NioTcpForwardConnection implements NioAttachment {
+final class NioTcpForwardConnection extends NioForwardConnection implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpForwardConnection.class);
-  private static final String ACK_KEY = "ack";
-
-  private final NioTcpChannel channel;
-  private final NioEventLoop eventLoop;
-  private final ForwardCallback callback;
-  private final MsgpackStreamUnpacker unpacker;
-  private final MsgpackForwardRequestDecoder decoder;
-  private final ForwardSecurity security;
-  private MsgPackPingDecoder pingDecoder;
-  private Optional<ForwardClientNode> node;
-
-  final ThreadSafeQueue<ByteBuffer> responses = new ThreadSafeQueue<>();
-
-  private final byte[] nonce = new byte[16];
-  private final byte[] userAuth = new byte[16];
-
-  enum ConnectionState {
-    HELO, PINGPONG, ESTABLISHED
-  }
-
-  private ConnectionState state;
 
   NioTcpForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
                           final ForwardCallback callback, final MsgpackStreamUnpacker unpacker,
                           final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
-    this.channel = channel;
-    this.eventLoop = eventLoop;
-    this.callback = callback;
-    this.unpacker = unpacker;
-    this.decoder = decoder;
-    this.security = security;
-    state = ConnectionState.ESTABLISHED;
+    super(channel, eventLoop, callback, unpacker, decoder, security);
   }
 
   NioTcpForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
@@ -99,20 +70,7 @@ final class NioTcpForwardConnection implements NioAttachment {
     this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, chunkSizeLimit, security);
 
     if (this.security.isEnabled()) {
-      try {
-        // SecureRandom secureRandom = SecureRandom.getInstanceStrong();
-        // Above secureRandom may block...
-        // TODO: reuse SecureRandom instance
-        SecureRandom secureRandom = SecureRandom.getInstance("NativePRNGNonBlocking");
-        logger.debug(secureRandom.getAlgorithm());
-        secureRandom.nextBytes(nonce);
-        secureRandom.nextBytes(userAuth);
-      } catch (NoSuchAlgorithmException e) {
-        e.printStackTrace();
-      }
-      node = security.findNode(((InetSocketAddress) channel.getRemoteAddress()).getAddress());
       state = ConnectionState.HELO;
-      pingDecoder = new MsgPackPingDecoder(this.security, node.orElse(null), nonce, userAuth);
       channel.register(eventLoop, false, true, this);
       responses.enqueue(generateHelo());
     } else {
@@ -242,64 +200,6 @@ final class NioTcpForwardConnection implements NioAttachment {
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }
-  }
-
-  // TODO Set keepalive on HELO message true/false according to ForwardServer configuration
-  //      ForwardServer.keepAliveEnabled set SO_KEEPALIVE.
-  //      See also https://github.com/okumin/influent/pull/32#discussion_r145196969
-  private ByteBuffer generateHelo() {
-    // ['HELO', options(hash)]
-    // ['HELO', {'nonce' => nonce, 'auth' => user_auth_salt/empty string, 'keepalive' => true/false}].to_msgpack
-    MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-    try {
-      packer.packArrayHeader(2).packString("HELO").packMapHeader(3).packString("nonce")
-          .packBinaryHeader(16).writePayload(nonce).packString("auth").packBinaryHeader(16)
-          .writePayload(userAuth).packString("keepalive").packBoolean(true);
-    } catch (IOException e) {
-      logger.error("Failed to pack HELO message", e);
-    }
-
-    return packer.toMessageBuffer().sliceAsByteBuffer();
-  }
-
-  private ByteBuffer generatePong(CheckPingResult checkPingResult) {
-    // [
-    //   'PONG',
-    //   bool(authentication result),
-    //   'reason if authentication failed',
-    //   self_hostname,
-    //   sha512_hex(salt + self_hostname + nonce + sharedkey)
-    // ]
-    MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
-    try {
-      if (checkPingResult.isSucceeded()) {
-        MessageDigest md = MessageDigest.getInstance("SHA-512");
-        md.update(checkPingResult.getSharedKeySalt().getBytes());
-        md.update(security.getSelfHostname().getBytes());
-        md.update(nonce);
-        md.update(checkPingResult.getSharedKey().getBytes());
-        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
-            .packString("").packString(security.getSelfHostname())
-            .packString(generateHexString(md.digest()));
-      } else {
-        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
-            .packString(checkPingResult.getReason()).packString("").packString("");
-      }
-    } catch (IOException e) {
-      logger.error("Failed to pack PONG message", e);
-    } catch (NoSuchAlgorithmException e) {
-      logger.error(e.getMessage(), e);
-    }
-
-    return packer.toMessageBuffer().sliceAsByteBuffer();
-  }
-
-  private String generateHexString(final byte[] digest) {
-    StringBuilder sb = new StringBuilder();
-    for (byte b : digest) {
-      sb.append(String.format("%02x", b));
-    }
-    return sb.toString();
   }
 
   @Override
