@@ -16,31 +16,28 @@
 
 package influent.forward;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.ReadOnlyBufferException;
-import java.nio.channels.SocketChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
+import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessagePack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
+import java.nio.channels.SocketChannel;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A connection for SSL/TLS forward protocol.
