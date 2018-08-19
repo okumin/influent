@@ -44,8 +44,8 @@ lazy val commonSettings = Seq(
   javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.25",
-    "org.mockito" % "mockito-core" % "2.8.47" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+    "org.mockito" % "mockito-core" % "2.15.0" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
     "org.scalacheck" %% "scalacheck" % "1.13.5" % "test"
   ),
   // sbt-header settings

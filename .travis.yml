@@ -5,5 +5,6 @@ script:
 
 jdk:
   - oraclejdk8
+  - oraclejdk9
 
 sudo: true
