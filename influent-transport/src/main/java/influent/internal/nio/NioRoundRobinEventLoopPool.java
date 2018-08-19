@@ -21,8 +21,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * An {@code NioEventLoopPool} running multiple {@code NioEventLoops}
- * and choose {@code NioEventLoop} in round-robin fashion.
+ * An {@code NioEventLoopPool} running multiple {@code NioEventLoops} and choose {@code
+ * NioEventLoop} in round-robin fashion.
  */
 final class NioRoundRobinEventLoopPool implements NioEventLoopPool {
   private final NioEventLoop[] eventLoops;

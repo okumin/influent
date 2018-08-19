@@ -50,10 +50,8 @@ final class MsgpackForwardRequestDecoder {
   private static final Value CHUNK_KEY = new ImmutableStringValueImpl("chunk");
   private static final Value COMPRESSED_KEY = new ImmutableStringValueImpl("compressed");
   private static final int EVENT_TIME_LENGTH = 8;
-  private static final ThreadLocal<ByteBuffer> EVENT_TIME_BUFFER = ThreadLocal
-      .withInitial(
-          () -> ByteBuffer.allocate(EVENT_TIME_LENGTH)
-      );
+  private static final ThreadLocal<ByteBuffer> EVENT_TIME_BUFFER =
+      ThreadLocal.withInitial(() -> ByteBuffer.allocate(EVENT_TIME_LENGTH));
 
   private final Clock clock;
 
@@ -68,26 +66,17 @@ final class MsgpackForwardRequestDecoder {
   /**
    * Decodes a request from clients.
    *
-   * {@see https://github.com/fluent/fluentd/wiki/Forward-Protocol-Specification-v1}
+   * <p>{@see https://github.com/fluent/fluentd/wiki/Forward-Protocol-Specification-v1}
    *
-   * {{{
-   *   Connection ::= <<Request>>*
-   *   Request ::= Message | Forward | PackedForward | nil
-   *   Message ::= [ Tag, Time, Record, Option? ]
-   *   Forward ::= [ Tag, MultiEventStream, Option? ]
-   *   MultiEventStream ::= [ Event* ]
-   *   PackedForward ::= [ Tag, MessagePackEventStream, Option? ]
-   *   MessagePackEventStream ::= <<Event>>*
-   *   Event ::= [ Time, Record ]
-   *   Tag ::= string
-   *   Time ::= integer | EventTime
-   *   Record ::= object
-   *   Option ::= object
-   * }}}
+   * <p>{{{ Connection ::= <<Request>>* Request ::= Message | Forward | PackedForward | nil Message
+   * ::= [ Tag, Time, Record, Option? ] Forward ::= [ Tag, MultiEventStream, Option? ]
+   * MultiEventStream ::= [ Event* ] PackedForward ::= [ Tag, MessagePackEventStream, Option? ]
+   * MessagePackEventStream ::= <<Event>>* Event ::= [ Time, Record ] Tag ::= string Time ::=
+   * integer | EventTime Record ::= object Option ::= object }}}
    *
    * @param value msgpack value
-   * @return {@code ForwardRequest} if {@code value} is a forward request,
-   *         {@code Optional.empty()} if {@code value} is nil that is a future heartbeat request
+   * @return {@code ForwardRequest} if {@code value} is a forward request, {@code Optional.empty()}
+   *     if {@code value} is nil that is a future heartbeat request
    */
   Optional<ForwardRequest> decode(final ImmutableValue value) {
     if (value.isNilValue()) return Optional.empty(); // reserved
@@ -236,9 +225,8 @@ final class MsgpackForwardRequestDecoder {
     throw new IllegalArgumentException(message + " value = " + value);
   }
 
-  private IllegalArgumentException error(final String message,
-                                         final Value value,
-                                         final Throwable cause) {
+  private IllegalArgumentException error(
+      final String message, final Value value, final Throwable cause) {
     throw new IllegalArgumentException(message + " value = " + value, cause);
   }
 }

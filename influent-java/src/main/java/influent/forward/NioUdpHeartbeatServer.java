@@ -29,7 +29,8 @@ import influent.internal.util.ThreadSafeQueue;
 /**
  * A heartbeat server for forward protocol.
  *
- * {@code NioUdpHeartbeatServer} is not thread-safe and expected to be executed on the event loop thread.
+ * <p>{@code NioUdpHeartbeatServer} is not thread-safe and expected to be executed on the event loop
+ * thread.
  */
 final class NioUdpHeartbeatServer implements NioAttachment {
   private static final byte RESPONSE_BYTE = 0;
@@ -61,10 +62,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
     channel.register(eventLoop, true, false, this);
   }
 
-  /**
-   * Sends heartbeat responses.
-   * {@code NioUdpHeartbeatServer#onWritable} never fails.
-   */
+  /** Sends heartbeat responses. {@code NioUdpHeartbeatServer#onWritable} never fails. */
   @Override
   public void onWritable() {
     if (sendResponses()) {
@@ -89,10 +87,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
     return true;
   }
 
-  /**
-   * Receives heartbeat requests.
-   * {@code NioUdpHeartbeatServer#onReadable} never fails.
-   */
+  /** Receives heartbeat requests. {@code NioUdpHeartbeatServer#onReadable} never fails. */
   @Override
   public void onReadable() {
     while (true) {
@@ -114,18 +109,14 @@ final class NioUdpHeartbeatServer implements NioAttachment {
     channel.enableOpWrite(eventLoop);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void close() {
     channel.close();
     logger.info("The heartbeat server bound with {} closed.", channel.getLocalAddress());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "NioUdpHeartbeatServer(" + channel.getLocalAddress() + ")";

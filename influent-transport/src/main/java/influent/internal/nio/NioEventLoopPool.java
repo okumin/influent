@@ -22,13 +22,13 @@ import java.util.concurrent.ThreadFactory;
 /**
  * A pool of {@code NioEventLoop}.
  *
- * {@code NioEventLoop} is unconditionally thread-safe.
+ * <p>{@code NioEventLoop} is unconditionally thread-safe.
  */
 public interface NioEventLoopPool {
   /**
-   * Creates the new {@code NioEventLoopPool}
-   * which contains the given size of {@code NioEventLoops}.
-   * The larger {@code poolSize} is given, the larger number of threads concurrently run.
+   * Creates the new {@code NioEventLoopPool} which contains the given size of {@code
+   * NioEventLoops}. The larger {@code poolSize} is given, the larger number of threads concurrently
+   * run.
    *
    * @param poolSize the size of {@code NioEventLoopPool}
    * @return the new {@code NioEventLoopPool}
@@ -53,18 +53,15 @@ public interface NioEventLoopPool {
    */
   void start(final ThreadFactory threadFactory);
 
-  /**
-   * @return the next {@code NioEventLoop}
-   */
+  /** @return the next {@code NioEventLoop} */
   NioEventLoop next();
 
   /**
-   * Stops all the {@code NioEventLoop}.
-   * Shutdown operations are executed asynchronously
-   * and {@code NioEventLoopPool#shutdown} returns a {@code CompletedFuture}.
+   * Stops all the {@code NioEventLoop}. Shutdown operations are executed asynchronously and {@code
+   * NioEventLoopPool#shutdown} returns a {@code CompletedFuture}.
    *
-   * @return {@code CompletableFuture} the future that will be completed
-   *         when all the event loop stops
+   * @return {@code CompletableFuture} the future that will be completed when all the event loop
+   *     stops
    * @throws IllegalStateException when this event loop pool is not started
    */
   CompletableFuture<Void> shutdown();

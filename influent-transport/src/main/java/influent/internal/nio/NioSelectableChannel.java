@@ -20,21 +20,15 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * A wrapped {@code SelectableChannel}.
- */
+/** A wrapped {@code SelectableChannel}. */
 abstract class NioSelectableChannel {
   // This may be retrieved by non-event-loop thread.
   private final AtomicReference<SelectionKey> key = new AtomicReference<>();
 
-  /**
-   * @return the underlying channel
-   */
+  /** @return the underlying channel */
   abstract SelectableChannel unwrap();
 
-  /**
-   * @return the {@code SelectionKey}
-   */
+  /** @return the {@code SelectionKey} */
   final SelectionKey selectionKey() {
     return key.get();
   }

@@ -32,8 +32,8 @@ final class MsgPackPingDecoder {
   private final byte[] nonce;
   private final byte[] userAuth;
 
-  public MsgPackPingDecoder(ForwardSecurity security, ForwardClientNode node, byte[] nonce,
-      byte[] userAuth) {
+  public MsgPackPingDecoder(
+      ForwardSecurity security, ForwardClientNode node, byte[] nonce, byte[] userAuth) {
     this.security = security;
     this.node = node;
     this.nonce = nonce;
@@ -82,14 +82,19 @@ final class MsgPackPingDecoder {
       }
 
       if (security.isUserAuthEnabled()) {
-        boolean userAuthenticationSucceeded = security.findAuthenticateUsers(node, username).stream().anyMatch(user -> {
-          md.reset();
-          md.update(userAuth);
-          md.update(username.getBytes());
-          md.update(user.getPassword().getBytes());
-          String serverSidePasswordDigest = generateHexString(md.digest());
-          return passwordDigest.equals(serverSidePasswordDigest);
-        });
+        boolean userAuthenticationSucceeded =
+            security
+                .findAuthenticateUsers(node, username)
+                .stream()
+                .anyMatch(
+                    user -> {
+                      md.reset();
+                      md.update(userAuth);
+                      md.update(username.getBytes());
+                      md.update(user.getPassword().getBytes());
+                      String serverSidePasswordDigest = generateHexString(md.digest());
+                      return passwordDigest.equals(serverSidePasswordDigest);
+                    });
         if (!userAuthenticationSucceeded) {
           // FIXME Add remote address to log
           logger.info("Authentication failed: hostname={}, username={}", clientHostname, username);
@@ -123,8 +128,8 @@ final class MsgPackPingDecoder {
     throw new IllegalArgumentException(message + " value = " + value);
   }
 
-  private IllegalArgumentException error(final String message, final Value value,
-      final Throwable cause) {
+  private IllegalArgumentException error(
+      final String message, final Value value, final Throwable cause) {
     throw new IllegalArgumentException(message + " value = " + value, cause);
   }
 }

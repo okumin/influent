@@ -20,13 +20,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * A thread-safe queue.
- * {@code ThreadSafeQueue} is designed for non-blocking applications,
- * so its APIs never block threads.
+ * A thread-safe queue. {@code ThreadSafeQueue} is designed for non-blocking applications, so its
+ * APIs never block threads.
  *
- * This is expected to be used in only Influent project.
+ * <p>This is expected to be used in only Influent project.
  *
- * {@code ThreadSafeQueue} is unconditionally thread-safe.
+ * <p>{@code ThreadSafeQueue} is unconditionally thread-safe.
  *
  * @param <E> the type of elements
  */
@@ -37,13 +36,12 @@ public final class ThreadSafeQueue<E> {
    * Adds an element to this {@code ThreadSafeQueue}.
    *
    * @param element the element to add
-   * @return {@code true} if the element was added to this queue, else
-   *         {@code false}
-   * @throws ClassCastException if the class of the specified element
-   *         prevents it from being added to this queue
+   * @return {@code true} if the element was added to this queue, else {@code false}
+   * @throws ClassCastException if the class of the specified element prevents it from being added
+   *     to this queue
    * @throws NullPointerException if the specified element is null
-   * @throws IllegalArgumentException if some property of the specified
-   *         element prevents it from being added to this queue
+   * @throws IllegalArgumentException if some property of the specified element prevents it from
+   *     being added to this queue
    */
   public boolean enqueue(final E element) {
     return queue.offer(element);

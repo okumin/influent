@@ -31,10 +31,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
-/**
- * A adapter of {@code ServerSocketChannel}.
- * The main purpose is to handle complex errors.
- */
+/** A adapter of {@code ServerSocketChannel}. The main purpose is to handle complex errors. */
 final class NioServerSocketChannel extends NioSelectableChannel {
   private final ServerSocketChannel channel;
   private final SocketAddress localAddress;
@@ -44,19 +41,24 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     this.localAddress = localAddress;
   }
 
-  private NioServerSocketChannel(final ServerSocketChannel channel, final SocketAddress localAddress, final NioTcpConfig config) {
+  private NioServerSocketChannel(
+      final ServerSocketChannel channel,
+      final SocketAddress localAddress,
+      final NioTcpConfig config) {
     this.channel = channel;
     this.localAddress = localAddress;
 
     setOption(channel, StandardSocketOptions.SO_REUSEADDR, true);
     bind(channel, localAddress, config.getBacklog().orElse(0));
-    config.getReceiveBufferSize().ifPresent((receiveBufferSize) ->
-            setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize)
-    );
+    config
+        .getReceiveBufferSize()
+        .ifPresent(
+            (receiveBufferSize) ->
+                setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize));
   }
 
-  private static void bind(final ServerSocketChannel channel, final SocketAddress localAddress,
-      final int backlog) {
+  private static void bind(
+      final ServerSocketChannel channel, final SocketAddress localAddress, final int backlog) {
     try {
       channel.bind(localAddress, backlog);
     } catch (final AlreadyBoundException | UnsupportedAddressTypeException e) {
@@ -69,8 +71,8 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     }
   }
 
-  private static <T> void setOption(final ServerSocketChannel channel, final SocketOption<T> name,
-      final T value) {
+  private static <T> void setOption(
+      final ServerSocketChannel channel, final SocketOption<T> name, final T value) {
     try {
       channel.setOption(name, value);
     } catch (final UnsupportedOperationException | IllegalArgumentException e) {
@@ -86,7 +88,7 @@ final class NioServerSocketChannel extends NioSelectableChannel {
    *
    * @param localAddress the server's address
    * @return {@code ServerSocketChannel}
-   * @throws InfluentIOException      when ServerSocketChannel#open fails
+   * @throws InfluentIOException when ServerSocketChannel#open fails
    * @throws IllegalArgumentException when the local address is illegal or already bound
    */
   static NioServerSocketChannel open(final SocketAddress localAddress, final NioTcpConfig config) {
@@ -97,13 +99,12 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     }
   }
 
-
   /**
    * Accepts a new connection.
    *
    * @return the new {@code SocketChannel}
-   * @throws InfluentIOException when ServerSocketChannel#accept fails
-   *                             typically, this channel is already closed
+   * @throws InfluentIOException when ServerSocketChannel#accept fails typically, this channel is
+   *     already closed
    */
   SocketChannel accept() {
     try {
@@ -117,24 +118,18 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     }
   }
 
-  /**
-   * Closes this {@code NioServerSocketChannel}.
-   */
+  /** Closes this {@code NioServerSocketChannel}. */
   void close() {
     Exceptions.ignore(channel::close, "The acceptor bound with " + localAddress + " closed.");
   }
 
-  /**
-   * Returns server's address.
-   * This method does not return null even if this channel is closed.
-   */
+  /** Returns server's address. This method does not return null even if this channel is closed. */
   SocketAddress getLocalAddress() {
     return localAddress;
   }
 
   /**
-   * Registers this channel to the selector.
-   * This operation is done asynchronously.
+   * Registers this channel to the selector. This operation is done asynchronously.
    *
    * @param eventLoop the event loop
    * @param attachment the attachment
@@ -143,17 +138,13 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     eventLoop.register(this, SelectionKey.OP_ACCEPT, attachment);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   SelectableChannel unwrap() {
     return channel;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "NioServerSocketChannel(" + localAddress + ')';

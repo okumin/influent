@@ -18,13 +18,11 @@ package influent.internal.nio;
 
 import influent.exception.InfluentIOException;
 
-/**
- * An attachment for new IO operations.
- */
+/** An attachment for new IO operations. */
 public interface NioAttachment extends AutoCloseable {
   /**
-   * Handles a read event.
-   * {@code NioAttachment} is closed when {@code onReadable} throws an exception.
+   * Handles a read event. {@code NioAttachment} is closed when {@code onReadable} throws an
+   * exception.
    *
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onReadable} is not supported
@@ -34,8 +32,8 @@ public interface NioAttachment extends AutoCloseable {
   }
 
   /**
-   * Handles a write event.
-   * {@code NioAttachment} is closed when {@code onWritable} throws an exception.
+   * Handles a write event. {@code NioAttachment} is closed when {@code onWritable} throws an
+   * exception.
    *
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onWritable} is not supported
@@ -45,8 +43,8 @@ public interface NioAttachment extends AutoCloseable {
   }
 
   /**
-   * Handles an accept event.
-   * {@code NioAttachment} is closed when {@code onAcceptable} throws an exception.
+   * Handles an accept event. {@code NioAttachment} is closed when {@code onAcceptable} throws an
+   * exception.
    *
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onAcceptable} is not supported
@@ -56,8 +54,8 @@ public interface NioAttachment extends AutoCloseable {
   }
 
   /**
-   * Handles a connect event.
-   * {@code NioAttachment} is closed when {@code onConnectable} throws an exception.
+   * Handles a connect event. {@code NioAttachment} is closed when {@code onConnectable} throws an
+   * exception.
    *
    * @throws InfluentIOException when some IO error occurs
    * @throws UnsupportedOperationException {@code onConnectable} is not supported
@@ -66,8 +64,6 @@ public interface NioAttachment extends AutoCloseable {
     throw new UnsupportedOperationException(this + " does not support onConnectable");
   }
 
-  /**
-   * Terminates this attachment.
-   */
+  /** Terminates this attachment. */
   void close();
 }

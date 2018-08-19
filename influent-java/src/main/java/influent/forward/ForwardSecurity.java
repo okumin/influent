@@ -39,8 +39,13 @@ public class ForwardSecurity {
     this.enabled = false;
   }
 
-  public ForwardSecurity(String selfHostname, String sharedKey, boolean userAuthEnabled,
-      boolean anonymousSourceAllowed, List<ForwardClient> clients, List<ForwardClientUser> users) {
+  public ForwardSecurity(
+      String selfHostname,
+      String sharedKey,
+      boolean userAuthEnabled,
+      boolean anonymousSourceAllowed,
+      List<ForwardClient> clients,
+      List<ForwardClientUser> users) {
     this.selfHostname = selfHostname;
     this.sharedKey = sharedKey;
     this.userAuthEnabled = userAuthEnabled;
@@ -67,10 +72,7 @@ public class ForwardSecurity {
   }
 
   public Optional<ForwardClientNode> findNode(InetAddress remoteAddress) {
-    return nodes
-        .stream()
-        .filter(n -> n.isMatched(remoteAddress))
-        .findFirst();
+    return nodes.stream().filter(n -> n.isMatched(remoteAddress)).findFirst();
   }
 
   public String getSelfHostname() {
@@ -83,12 +85,15 @@ public class ForwardSecurity {
 
   public List<ForwardClientUser> findAuthenticateUsers(ForwardClientNode node, String username) {
     if (node == null || node.getUsernames().isEmpty()) {
-      return users.stream()
+      return users
+          .stream()
           .filter(user -> user.getUsername().equals(username))
           .collect(Collectors.toList());
     } else {
-      return users.stream()
-          .filter(user -> node.getUsernames().contains(username) && user.getUsername().equals(username))
+      return users
+          .stream()
+          .filter(
+              user -> node.getUsernames().contains(username) && user.getUsername().equals(username))
           .collect(Collectors.toList());
     }
   }
@@ -138,7 +143,8 @@ public class ForwardSecurity {
     /**
      * Allow anonymous source or not. Clients are required if not allowed anonymous source.
      *
-     * @param anonymousSourceAllowed If true, allow anonymous source. Otherwise clients are required.
+     * @param anonymousSourceAllowed If true, allow anonymous source. Otherwise clients are
+     *     required.
      * @return this builder
      */
     public Builder allowAnonymousSource(boolean anonymousSourceAllowed) {
@@ -171,8 +177,8 @@ public class ForwardSecurity {
 
     public ForwardSecurity build() {
       // TODO Check required parameters
-      return new ForwardSecurity(selfHostname, sharedKey, userAuthEnabled, anonymousSourceAllowed,
-          clients, users);
+      return new ForwardSecurity(
+          selfHostname, sharedKey, userAuthEnabled, anonymousSourceAllowed, clients, users);
     }
   }
 }

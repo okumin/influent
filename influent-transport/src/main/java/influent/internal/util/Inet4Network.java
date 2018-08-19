@@ -22,8 +22,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class Inet4Network implements InetNetwork {
-  private final static byte[] MAX = {(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,};
-  private final static BigInteger MAX_VALUE = new BigInteger(1, MAX);
+  private static final byte[] MAX = {
+    (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+  };
+  private static final BigInteger MAX_VALUE = new BigInteger(1, MAX);
   private InetAddress network;
   private InetAddress netmask;
 

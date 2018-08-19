@@ -16,9 +16,7 @@
 
 package influent.exception;
 
-/**
- * IO error.
- */
+/** IO error. */
 public final class InfluentIOException extends RuntimeException {
   /**
    * Constructs a new {@code InfluentIOException}.
@@ -39,9 +37,7 @@ public final class InfluentIOException extends RuntimeException {
     super(message);
   }
 
-  /**
-   * Constructs a new {@code InfluentIOException}.
-   */
+  /** Constructs a new {@code InfluentIOException}. */
   public InfluentIOException() {
     super();
   }

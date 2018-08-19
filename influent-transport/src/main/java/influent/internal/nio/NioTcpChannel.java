@@ -30,9 +30,7 @@ import java.nio.channels.SocketChannel;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
-/**
- * A non-blocking mode {@code SocketChannel}.
- */
+/** A non-blocking mode {@code SocketChannel}. */
 public final class NioTcpChannel extends NioSelectableChannel implements AutoCloseable {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
@@ -49,15 +47,16 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioTcpChannel(final SocketChannel channel,
-                       final NioTcpConfig tcpConfig) {
+  public NioTcpChannel(final SocketChannel channel, final NioTcpConfig tcpConfig) {
     this.channel = channel;
 
     try {
       this.remoteAddress = getRemoteAddress(channel);
-      tcpConfig.getSendBufferSize().ifPresent((sendBufferSize) ->
-              setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize)
-      );
+      tcpConfig
+          .getSendBufferSize()
+          .ifPresent(
+              (sendBufferSize) ->
+                  setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize));
       setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
       setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
     } catch (final Exception e) {
@@ -75,8 +74,8 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
     }
   }
 
-  private static <T> void setOption(final SocketChannel channel, final SocketOption<T> name,
-      final T value) {
+  private static <T> void setOption(
+      final SocketChannel channel, final SocketOption<T> name, final T value) {
     try {
       channel.setOption(name, value);
     } catch (final UnsupportedOperationException | IllegalArgumentException e) {
@@ -136,16 +135,18 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Registers the this channel to the given {@code NioEventLoop}.
-   * This method is thread-safe.
+   * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
    *
    * @param eventLoop the {@code NioEventLoop}
    * @param opReadEnabled whether OP_READ is enabled or not
    * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop, final boolean opReadEnabled,
-      final boolean opWriteEnabled, final NioAttachment attachment) {
+  public void register(
+      final NioEventLoop eventLoop,
+      final boolean opReadEnabled,
+      final boolean opWriteEnabled,
+      final NioAttachment attachment) {
     int ops = 0;
     if (opReadEnabled) {
       ops |= SelectionKey.OP_READ;
@@ -157,8 +158,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Enables OP_READ.
-   * Operations are done asynchronously.
+   * Enables OP_READ. Operations are done asynchronously.
    *
    * @param eventLoop the {@code NioEventLoop}
    */
@@ -167,8 +167,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Enables OP_WRITE.
-   * Operations are done asynchronously.
+   * Enables OP_WRITE. Operations are done asynchronously.
    *
    * @param eventLoop the {@code NioEventLoop}
    */
@@ -177,8 +176,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Disables OP_WRITE.
-   * Operations are done asynchronously.
+   * Disables OP_WRITE. Operations are done asynchronously.
    *
    * @param eventLoop the {@code NioEventLoop}
    */
@@ -186,9 +184,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
     eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
   }
 
-  /**
-   * Closes the {@code SocketChannel}.
-   */
+  /** Closes the {@code SocketChannel}. */
   @Override
   public void close() {
     closeChannel(channel);
@@ -198,31 +194,23 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
     Exceptions.ignore(channel::close, "Failed closing the socket channel." + getRemoteAddress());
   }
 
-  /**
-   * @return true if this channel is open
-   */
+  /** @return true if this channel is open */
   public boolean isOpen() {
     return Exceptions.orFalse(channel::isOpen);
   }
 
-  /**
-   * @return the remote address
-   */
+  /** @return the remote address */
   public SocketAddress getRemoteAddress() {
     return remoteAddress;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   SelectableChannel unwrap() {
     return channel;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "NioTcpChannel(" + getRemoteAddress() + ")";

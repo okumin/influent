@@ -48,9 +48,15 @@ public class NioChannelConfig {
     tlsVersions = null;
   }
 
-  public NioChannelConfig(final String host, final int port, final boolean sslEnabled,
-      final String[] tlsVersions, final String[] ciphers, final String keystorePath,
-      final String keystorePassword, final String keyPassword) {
+  public NioChannelConfig(
+      final String host,
+      final int port,
+      final boolean sslEnabled,
+      final String[] tlsVersions,
+      final String[] ciphers,
+      final String keystorePath,
+      final String keystorePassword,
+      final String keyPassword) {
     this.host = host;
     this.port = port;
     this.sslEnabled = sslEnabled;
@@ -59,7 +65,9 @@ public class NioChannelConfig {
     try {
       if (isSslEnabled()) {
         context = SSLContext.getInstance("TLS");
-        context.init(createKeyManagers(keystorePath, keystorePassword, keyPassword), null,
+        context.init(
+            createKeyManagers(keystorePath, keystorePassword, keyPassword),
+            null,
             new SecureRandom());
       }
     } catch (final NoSuchAlgorithmException e) {
@@ -85,8 +93,8 @@ public class NioChannelConfig {
     return engine;
   }
 
-  private KeyManager[] createKeyManagers(final String filepath, final String keystorePassword,
-      final String keyPassword) {
+  private KeyManager[] createKeyManagers(
+      final String filepath, final String keystorePassword, final String keyPassword) {
     try {
       final KeyStore keyStore = KeyStore.getInstance("JKS");
       try (InputStream keyStoreIS = new FileInputStream(filepath)) {
@@ -98,7 +106,9 @@ public class NioChannelConfig {
       return kmf.getKeyManagers();
     } catch (final IOException e) {
       e.printStackTrace();
-    } catch (final CertificateException | UnrecoverableKeyException | NoSuchAlgorithmException
+    } catch (final CertificateException
+        | UnrecoverableKeyException
+        | NoSuchAlgorithmException
         | KeyStoreException e) {
       e.printStackTrace();
     }

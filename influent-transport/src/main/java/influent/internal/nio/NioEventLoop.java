@@ -33,12 +33,15 @@ import influent.internal.util.ThreadSafeQueue;
 /**
  * An event loop for non-blocking IO.
  *
- * {@code NioEventLoop} is unconditionally thread-safe.
- * {@code NioEventLoop#run} is expected to be executed on one exclusive thread.
+ * <p>{@code NioEventLoop} is unconditionally thread-safe. {@code NioEventLoop#run} is expected to
+ * be executed on one exclusive thread.
  */
 public final class NioEventLoop implements Runnable {
   private enum State {
-    IDLE, ACTIVE, STOPPING, TERMINATED
+    IDLE,
+    ACTIVE,
+    STOPPING,
+    TERMINATED
   }
 
   private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
@@ -100,8 +103,7 @@ public final class NioEventLoop implements Runnable {
   }
 
   /**
-   * Registers a channel with this event loop.
-   * Operations are done asynchronously.
+   * Registers a channel with this event loop. Operations are done asynchronously.
    *
    * @param channel the channel
    * @param ops the interest set
@@ -112,8 +114,8 @@ public final class NioEventLoop implements Runnable {
   }
 
   /**
-   * Enables the given interest set on the given {@code SelectionKey}.
-   * Operations are done asynchronously.
+   * Enables the given interest set on the given {@code SelectionKey}. Operations are done
+   * asynchronously.
    *
    * @param key the {@code SelectionKey}
    * @param ops the interest set to be enabled
@@ -123,8 +125,8 @@ public final class NioEventLoop implements Runnable {
   }
 
   /**
-   * Disables the given interest set on the given {@code SelectionKey}.
-   * Operations are done asynchronously.
+   * Disables the given interest set on the given {@code SelectionKey}. Operations are done
+   * asynchronously.
    *
    * @param key the {@code SelectionKey}
    * @param ops the interest set to be disabled
@@ -142,10 +144,11 @@ public final class NioEventLoop implements Runnable {
   private void cleanup() {
     try {
       final Set<SelectionKey> keys = selector.keys();
-      keys.forEach(key -> {
-        final NioAttachment attachment = (NioAttachment) key.attachment();
-        Exceptions.ignore(attachment::close, "Failed closing the attachment. " + attachment);
-      });
+      keys.forEach(
+          key -> {
+            final NioAttachment attachment = (NioAttachment) key.attachment();
+            Exceptions.ignore(attachment::close, "Failed closing the attachment. " + attachment);
+          });
       Exceptions.ignore(selector::close, "Failed closing the selector");
     } catch (final ClosedSelectorException e) {
       throw new AssertionError(e);
@@ -153,9 +156,8 @@ public final class NioEventLoop implements Runnable {
   }
 
   /**
-   * Stops this event loop.
-   * Shutdown operations are executed asynchronously
-   * and {@code NioEventLoop#shutdown} returns a {@code CompletedFuture}.
+   * Stops this event loop. Shutdown operations are executed asynchronously and {@code
+   * NioEventLoop#shutdown} returns a {@code CompletedFuture}.
    *
    * @return {@code CompletableFuture} the future that will be completed when this event loop stops
    * @throws IllegalStateException when this event loop is not started

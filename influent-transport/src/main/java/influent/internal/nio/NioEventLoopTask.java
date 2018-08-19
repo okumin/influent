@@ -30,13 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import influent.internal.util.Exceptions;
 
-/**
- * Tasks of {@code NioEventLoop}.
- */
+/** Tasks of {@code NioEventLoop}. */
 interface NioEventLoopTask {
-  /**
-   * Registers a new channel.
-   */
+  /** Registers a new channel. */
   final class Register implements NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(Register.class);
 
@@ -45,7 +41,10 @@ interface NioEventLoopTask {
     private final int ops;
     private final NioAttachment attachment;
 
-    Register(final Selector selector, final NioSelectableChannel channel, final int ops,
+    Register(
+        final Selector selector,
+        final NioSelectableChannel channel,
+        final int ops,
         final NioAttachment attachment) {
       this.selector = selector;
       this.channel = channel;
@@ -59,7 +58,8 @@ interface NioEventLoopTask {
         final SelectionKey key =
             channel.unwrap().configureBlocking(false).register(selector, ops, attachment);
         channel.onRegistered(key);
-      } catch (final ClosedSelectorException | IllegalBlockingModeException
+      } catch (final ClosedSelectorException
+          | IllegalBlockingModeException
           | IllegalSelectorException e) {
         throw new AssertionError(e);
       } catch (final CancelledKeyException | IllegalArgumentException | IOException e) {
@@ -69,9 +69,7 @@ interface NioEventLoopTask {
     }
   }
 
-  /**
-   * Updates an interest set.
-   */
+  /** Updates an interest set. */
   final class UpdateInterestSet implements NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(UpdateInterestSet.class);
 
@@ -97,9 +95,7 @@ interface NioEventLoopTask {
     }
   }
 
-  /**
-   * Selects and proceeds IO operations.
-   */
+  /** Selects and proceeds IO operations. */
   final class Select implements NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(Select.class);
 
@@ -169,8 +165,6 @@ interface NioEventLoopTask {
     }
   }
 
-  /**
-   * Executes this task.
-   */
+  /** Executes this task. */
   void run();
 }

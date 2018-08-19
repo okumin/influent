@@ -23,14 +23,11 @@ import java.util.function.Function;
 
 import influent.EventStream;
 
-/**
- * The callback function that consumes {@code EventStreams}.
- */
+/** The callback function that consumes {@code EventStreams}. */
 @FunctionalInterface
 public interface ForwardCallback {
   /**
-   * Creates the {@code ForwardCallback}.
-   * See also ForwardCallback#consume.
+   * Creates the {@code ForwardCallback}. See also ForwardCallback#consume.
    *
    * @param consumer the callback function
    * @return the {@code ForwardCallback}
@@ -40,31 +37,30 @@ public interface ForwardCallback {
   }
 
   /**
-   * Creates a {@code ForwardCallback} from the synchronous {@code Consumer} and the {@code Executor}.
+   * Creates a {@code ForwardCallback} from the synchronous {@code Consumer} and the {@code
+   * Executor}.
    *
    * @param consumer the synchronous {@code Consumer}
    * @param executor the {@code Executor} that executes {@code consumer}
    * @return the {@code ForwardCallback}
    */
-  static ForwardCallback ofSyncConsumer(final Consumer<EventStream> consumer,
-                                        final Executor executor) {
+  static ForwardCallback ofSyncConsumer(
+      final Consumer<EventStream> consumer, final Executor executor) {
     return stream -> CompletableFuture.runAsync(() -> consumer.accept(stream), executor);
   }
 
   /**
    * Consumes an {@code EventStream}.
    *
-   * {@code ForwardCallback#consume} must not be blocked
-   * since it is invoked on an event loop thread.
-   * If there are some IO operation or a CPU intensive processing,
-   * those must be executed on the another thread.
+   * <p>{@code ForwardCallback#consume} must not be blocked since it is invoked on an event loop
+   * thread. If there are some IO operation or a CPU intensive processing, those must be executed on
+   * the another thread.
    *
-   * This method receives an {@code EventStream} and returns a {@code CompletableFuture}.
-   * When the {@code CompletableFuture} succeeds,
-   * Influent assumes that the {@code EventStream} is completely consumed and
-   * may send an ack response to the client.
+   * <p>This method receives an {@code EventStream} and returns a {@code CompletableFuture}. When
+   * the {@code CompletableFuture} succeeds, Influent assumes that the {@code EventStream} is
+   * completely consumed and may send an ack response to the client.
    *
-   * When the {@code CompletableFuture} succeeds, Influent never sends an ack.
+   * <p>When the {@code CompletableFuture} succeeds, Influent never sends an ack.
    *
    * @param stream the {@code EventStream}
    * @return the result of this consumption

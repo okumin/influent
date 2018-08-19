@@ -23,23 +23,21 @@ import org.slf4j.LoggerFactory;
 /**
  * Utilities for exceptions.
  *
- * This is expected to be used in only Influent project.
+ * <p>This is expected to be used in only Influent project.
  */
 public final class Exceptions {
   /**
    * A callable block.
    *
-   * This is the same as {@code Runnable}
-   * except that {@code Block#run} may throw some {@code Exception}.
+   * <p>This is the same as {@code Runnable} except that {@code Block#run} may throw some {@code
+   * Exception}.
    */
   @FunctionalInterface
   public interface Block {
     void run() throws Exception;
   }
 
-  /**
-   * Boolean specialized callable.
-   */
+  /** Boolean specialized callable. */
   @FunctionalInterface
   public interface BooleanCallable {
     boolean call() throws Exception;

@@ -23,8 +23,8 @@ import org.msgpack.value.ImmutableMapValue;
 /**
  * An event entry.
  *
- * This is not immutable when the {@code record} has mutable {@code org.msgpack.value.Value}.
- * But instances of {@code EventEntry} that this library returns are guaranteed immutable.
+ * <p>This is not immutable when the {@code record} has mutable {@code org.msgpack.value.Value}. But
+ * instances of {@code EventEntry} that this library returns are guaranteed immutable.
  */
 public final class EventEntry {
   private final Instant time;
@@ -47,23 +47,17 @@ public final class EventEntry {
     return new EventEntry(time, record);
   }
 
-  /**
-   * @return the event time
-   */
+  /** @return the event time */
   public Instant getTime() {
     return time;
   }
 
-  /**
-   * @return the record
-   */
+  /** @return the record */
   public ImmutableMapValue getRecord() {
     return record;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -77,17 +71,13 @@ public final class EventEntry {
         && Objects.equals(getRecord(), that.getRecord());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int hashCode() {
     return Objects.hash(getTime(), getRecord());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "EventEntry(" + getTime() + ',' + getRecord() + ')';

@@ -26,13 +26,9 @@ import java.util.concurrent.ThreadFactory;
 import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioTcpConfig;
 
-/**
- * A server which accepts requests of Fluentd's forward protocol.
- */
+/** A server which accepts requests of Fluentd's forward protocol. */
 public interface ForwardServer {
-  /**
-   * A builder of {@code ForwardServer}.
-   */
+  /** A builder of {@code ForwardServer}. */
   class Builder {
     private static int DEFAULT_WORKER_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
 
@@ -45,7 +41,7 @@ public interface ForwardServer {
     private final NioTcpConfig.Builder tcpConfigBuilder = new NioTcpConfig.Builder();
     private int workerPoolSize = 0;
     private boolean sslEnabled = false;
-    private String[] tlsVersions = new String[]{"TLSv1.1", "TLSv1.2"};
+    private String[] tlsVersions = new String[] {"TLSv1.1", "TLSv1.2"};
     private String[] ciphers = null;
     private String keystorePath = null;
     private String keystorePassword = null;
@@ -84,8 +80,8 @@ public interface ForwardServer {
     }
 
     /**
-     * Sets the allowable chunk size.
-     * The connection which sends a chunk larger than this limit may be disconnected.
+     * Sets the allowable chunk size. The connection which sends a chunk larger than this limit may
+     * be disconnected.
      *
      * @param value the allowable chunk size
      * @return this builder
@@ -102,8 +98,8 @@ public interface ForwardServer {
     /**
      * Sets the maximum number of pending connections for a server.
      *
-     * @param value the maximum number of pending connections
-     *              when 0 is given, the default value of JDK is used
+     * @param value the maximum number of pending connections when 0 is given, the default value of
+     *     JDK is used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
@@ -115,8 +111,7 @@ public interface ForwardServer {
     /**
      * Sets the SO_SNDBUF for forward connections.
      *
-     * @param value the size of socket send buffers
-     *              when 0 is given, the default value is used
+     * @param value the size of socket send buffers when 0 is given, the default value is used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
@@ -128,8 +123,7 @@ public interface ForwardServer {
     /**
      * Sets the SO_RCVBUF for forward connections.
      *
-     * @param value the size of socket receive buffers
-     *              when 0 is given, the default value is used
+     * @param value the size of socket receive buffers when 0 is given, the default value is used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
@@ -161,8 +155,8 @@ public interface ForwardServer {
     }
 
     /**
-     * Sets the event loop pool size.
-     * The larger {@code poolSize} is given, the larger number of threads concurrently run.
+     * Sets the event loop pool size. The larger {@code poolSize} is given, the larger number of
+     * threads concurrently run.
      *
      * @param value the event loop pool size
      * @return this builder
@@ -250,17 +244,22 @@ public interface ForwardServer {
      * Creates a new {@code ForwardServer}.
      *
      * @return the new {@code ForwardServer}
-     * @throws IllegalArgumentException if any of parameter is invalid
-     *                                  e.g. the local address is already used
+     * @throws IllegalArgumentException if any of parameter is invalid e.g. the local address is
+     *     already used
      * @throws influent.exception.InfluentIOException if some IO error occurs
      */
     public ForwardServer build() {
       final InetSocketAddress address = (InetSocketAddress) localAddress;
-      final NioChannelConfig channelConfig = new NioChannelConfig(
-          address.getHostName(), address.getPort(),
-          sslEnabled, tlsVersions, ciphers,
-          keystorePath, keystorePassword, keyPassword
-      );
+      final NioChannelConfig channelConfig =
+          new NioChannelConfig(
+              address.getHostName(),
+              address.getPort(),
+              sslEnabled,
+              tlsVersions,
+              ciphers,
+              keystorePath,
+              keystorePassword,
+              keyPassword);
       return new NioForwardServer(
           localAddress,
           forwardCallback,
@@ -268,14 +267,11 @@ public interface ForwardServer {
           tcpConfigBuilder.build(),
           workerPoolSize == 0 ? DEFAULT_WORKER_POOL_SIZE : workerPoolSize,
           channelConfig,
-          security
-      );
+          security);
     }
   }
 
-  /**
-   * Starts and spawns this {@code ForwardServer}.
-   */
+  /** Starts and spawns this {@code ForwardServer}. */
   default void start() {
     start(Executors.defaultThreadFactory());
   }
@@ -288,9 +284,8 @@ public interface ForwardServer {
   void start(final ThreadFactory threadFactory);
 
   /**
-   * Terminates this {@code ForwardServer}.
-   * Shutdown operations are executed asynchronously
-   * and {@code ForwardServer#shutdown} returns a {@code CompletedFuture}.
+   * Terminates this {@code ForwardServer}. Shutdown operations are executed asynchronously and
+   * {@code ForwardServer#shutdown} returns a {@code CompletedFuture}.
    *
    * @return {@code CompletableFuture} that will be completed when this {@code ForwardServer} stops
    */
