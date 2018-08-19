@@ -16,9 +16,10 @@
 
 package influent.internal.nio
 
-import influent.exception.InfluentIOException
 import java.nio.channels.SocketChannel
 import java.util.function.Consumer
+
+import influent.exception.InfluentIOException
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
@@ -37,7 +38,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
       when(serverSocketChannel.accept()).thenReturn(channel1, channel2, null)
       val callback = mock[Consumer[SocketChannel]]
 
-      val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
+      val acceptor = new NioTcpAcceptor(serverSocketChannel, callback)
       assert(acceptor.onAcceptable() === ())
 
       verify(serverSocketChannel, times(3)).accept()
@@ -55,7 +56,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
           .thenReturn(channel, null)
         val callback = mock[Consumer[SocketChannel]]
 
-        val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
+        val acceptor = new NioTcpAcceptor(serverSocketChannel, callback)
         assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
@@ -71,7 +72,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
         val callback = mock[Consumer[SocketChannel]]
         when(callback.accept(channel1)).thenThrow(new RuntimeException)
 
-        val acceptor = new NioTcpAcceptor(callback, serverSocketChannel)
+        val acceptor = new NioTcpAcceptor(serverSocketChannel, callback)
         assert(acceptor.onAcceptable() === ())
 
         verify(serverSocketChannel, times(3)).accept()
@@ -85,7 +86,7 @@ class NioTcpAcceptorSpec extends WordSpec with MockitoSugar {
   "close" should {
     "close the server socket channel" in {
       val serverSocketChannel = mock[NioServerSocketChannel]
-      val acceptor = new NioTcpAcceptor(nopCallback, serverSocketChannel)
+      val acceptor = new NioTcpAcceptor(serverSocketChannel, nopCallback)
       assert(acceptor.close() === ())
       verify(serverSocketChannel).close()
     }

@@ -16,6 +16,7 @@
 
 package influent.internal.nio;
 
+import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
@@ -28,7 +29,6 @@ import java.util.Set;
 import java.util.function.IntUnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.internal.util.Exceptions;
 
 /** Tasks of {@code NioEventLoop}. */
 interface NioEventLoopTask {
@@ -41,7 +41,7 @@ interface NioEventLoopTask {
     private final int ops;
     private final NioAttachment attachment;
 
-    Register(
+    private Register(
         final Selector selector,
         final NioSelectableChannel channel,
         final int ops,
@@ -50,6 +50,14 @@ interface NioEventLoopTask {
       this.channel = channel;
       this.ops = ops;
       this.attachment = attachment;
+    }
+
+    static Register of(
+        final Selector selector,
+        final NioSelectableChannel channel,
+        final int ops,
+        final NioAttachment attachment) {
+      return new Register(selector, channel, ops, attachment);
     }
 
     @Override
@@ -76,9 +84,13 @@ interface NioEventLoopTask {
     private final SelectionKey key;
     private final IntUnaryOperator updater;
 
-    UpdateInterestSet(final SelectionKey key, final IntUnaryOperator updater) {
+    private UpdateInterestSet(final SelectionKey key, final IntUnaryOperator updater) {
       this.key = key;
       this.updater = updater;
+    }
+
+    static UpdateInterestSet of(final SelectionKey key, final IntUnaryOperator updater) {
+      return new UpdateInterestSet(key, updater);
     }
 
     @Override
@@ -101,8 +113,12 @@ interface NioEventLoopTask {
 
     private final Selector selector;
 
-    Select(final Selector selector) {
+    private Select(final Selector selector) {
       this.selector = selector;
+    }
+
+    static Select of(final Selector selector) {
+      return new Select(selector);
     }
 
     @Override

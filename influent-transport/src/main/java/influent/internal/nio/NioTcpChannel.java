@@ -16,6 +16,8 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
@@ -27,42 +29,15 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 
-/** A non-blocking mode {@code SocketChannel}. */
+/** A non-blocking {@code SocketChannel}. */
 public final class NioTcpChannel extends NioSelectableChannel implements AutoCloseable {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
 
-  NioTcpChannel(final SocketChannel channel) {
+  NioTcpChannel(final SocketChannel channel, SocketAddress remoteAddress) {
     this.channel = channel;
-    this.remoteAddress = Exceptions.orNull(channel::getRemoteAddress);
-  }
-
-  /**
-   * Constructs a new {@code NioTcpChannel}.
-   *
-   * @param channel the accepted {@code SocketChannel}
-   * @param tcpConfig the {@code NioTcpConfig}
-   * @throws InfluentIOException if some IO error occurs
-   */
-  public NioTcpChannel(final SocketChannel channel, final NioTcpConfig tcpConfig) {
-    this.channel = channel;
-
-    try {
-      this.remoteAddress = getRemoteAddress(channel);
-      tcpConfig
-          .getSendBufferSize()
-          .ifPresent(
-              (sendBufferSize) ->
-                  setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize));
-      setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
-      setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
-    } catch (final Exception e) {
-      closeChannel(channel);
-      throw e;
-    }
+    this.remoteAddress = remoteAddress;
   }
 
   private static SocketAddress getRemoteAddress(final SocketChannel channel) {
@@ -83,6 +58,30 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
     } catch (final IOException e) {
       // ClosedChannelException is an IOException
       throw new InfluentIOException("SocketChannel#setOption failed", e);
+    }
+  }
+
+  /**
+   * Creates a new {@code NioTcpChannel}.
+   *
+   * @param channel the accepted {@code SocketChannel}
+   * @param tcpConfig the {@code NioTcpConfig}
+   * @throws InfluentIOException if some IO error occurs
+   */
+  public static NioTcpChannel open(final SocketChannel channel, final NioTcpConfig tcpConfig) {
+    try {
+      final SocketAddress remoteAddress = getRemoteAddress(channel);
+      tcpConfig
+          .getSendBufferSize()
+          .ifPresent(
+              (sendBufferSize) ->
+                  setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize));
+      setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
+      setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
+      return new NioTcpChannel(channel, remoteAddress);
+    } catch (final Exception e) {
+      closeChannel(channel, Exceptions.orNull(channel::getRemoteAddress));
+      throw e;
     }
   }
 
@@ -187,11 +186,11 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   /** Closes the {@code SocketChannel}. */
   @Override
   public void close() {
-    closeChannel(channel);
+    closeChannel(channel, getRemoteAddress());
   }
 
-  private void closeChannel(final SocketChannel channel) {
-    Exceptions.ignore(channel::close, "Failed closing the socket channel." + getRemoteAddress());
+  private static void closeChannel(final SocketChannel channel, final SocketAddress remoteAddress) {
+    Exceptions.ignore(channel::close, "Failed closing the socket channel." + remoteAddress);
   }
 
   /** @return true if this channel is open */

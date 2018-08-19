@@ -16,12 +16,13 @@
 
 package influent.internal.nio
 
-import influent.exception.InfluentIOException
-import influent.internal.nio.NioEventLoopTask.UpdateInterestSet
 import java.io.IOException
 import java.nio.channels._
 import java.util
 import java.util.function.IntUnaryOperator
+
+import influent.exception.InfluentIOException
+import influent.internal.nio.NioEventLoopTask.UpdateInterestSet
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
@@ -45,7 +46,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val channel = mock[NioSelectableChannel]
       when(channel.unwrap()).thenReturn(javaChannel)
 
-      val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
+      val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
       task.run()
 
       verify(javaChannel).configureBlocking(false)
@@ -70,7 +71,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val channel = mock[NioSelectableChannel]
           when(channel.unwrap()).thenReturn(javaChannel)
 
-          val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
+          val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
           task.run()
 
           verify(javaChannel).configureBlocking(false)
@@ -96,7 +97,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val channel = mock[NioSelectableChannel]
           when(channel.unwrap()).thenReturn(javaChannel)
 
-          val task = new NioEventLoopTask.Register(selector, channel, ops, attachment)
+          val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
           task.run()
 
           verify(javaChannel).configureBlocking(false)
@@ -116,7 +117,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val key = mock[SelectionKey]
       when(key.interestOps()).thenReturn(1)
 
-      val task = new UpdateInterestSet(key, updater)
+      val task = UpdateInterestSet.of(key, updater)
       task.run()
 
       verify(key).interestOps(1 | 2)
@@ -127,7 +128,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
         val key = mock[SelectionKey]
         when(key.interestOps()).thenReturn(1 | 2)
 
-        val task = new UpdateInterestSet(key, updater)
+        val task = UpdateInterestSet.of(key, updater)
         task.run()
 
         verify(key, never()).interestOps(anyInt())
@@ -139,7 +140,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
         val key = mock[SelectionKey]
         when(key.interestOps()).thenThrow(new CancelledKeyException)
 
-        val task = new UpdateInterestSet(key, updater)
+        val task = UpdateInterestSet.of(key, updater)
         task.run()
 
         verify(key, never()).interestOps(anyInt())
@@ -156,7 +157,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           when(key.interestOps()).thenReturn(1)
           when(key.interestOps(1)).thenThrow(error)
 
-          val task = new UpdateInterestSet(key, updater)
+          val task = UpdateInterestSet.of(key, updater)
           task.run()
 
           verify(key).interestOps(3)
@@ -215,7 +216,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       when(selector.select()).thenReturn(5)
       when(selector.selectedKeys()).thenReturn(keys)
 
-      val task = new NioEventLoopTask.Select(selector)
+      val task = NioEventLoopTask.Select.of(selector)
       task.run()
 
       verify(attachment, times(2)).onWritable()
@@ -231,7 +232,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
         val selector = mock[Selector]
         when(selector.select()).thenReturn(0)
 
-        val task = new NioEventLoopTask.Select(selector)
+        val task = NioEventLoopTask.Select.of(selector)
         task.run()
 
         verify(selector).select()
@@ -242,7 +243,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
         val selector = mock[Selector]
         when(selector.select()).thenThrow(new IOException())
 
-        val task = new NioEventLoopTask.Select(selector)
+        val task = NioEventLoopTask.Select.of(selector)
         task.run()
 
         verify(selector).select()
@@ -276,7 +277,7 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       when(selector.select()).thenReturn(2)
       when(selector.selectedKeys()).thenReturn(keys)
 
-      val task = new NioEventLoopTask.Select(selector)
+      val task = NioEventLoopTask.Select.of(selector)
       task.run()
 
       verify(attachment).onWritable()

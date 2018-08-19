@@ -16,6 +16,8 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
@@ -28,8 +30,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 
 /** A adapter of {@code ServerSocketChannel}. The main purpose is to handle complex errors. */
 final class NioServerSocketChannel extends NioSelectableChannel {
@@ -41,20 +41,12 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     this.localAddress = localAddress;
   }
 
-  private NioServerSocketChannel(
-      final ServerSocketChannel channel,
-      final SocketAddress localAddress,
-      final NioTcpConfig config) {
-    this.channel = channel;
-    this.localAddress = localAddress;
-
-    setOption(channel, StandardSocketOptions.SO_REUSEADDR, true);
-    bind(channel, localAddress, config.getBacklog().orElse(0));
-    config
-        .getReceiveBufferSize()
-        .ifPresent(
-            (receiveBufferSize) ->
-                setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize));
+  private static ServerSocketChannel newChannel() {
+    try {
+      return ServerSocketChannel.open();
+    } catch (final IOException e) {
+      throw new InfluentIOException("ServerSocketChannel#open failed", e);
+    }
   }
 
   private static void bind(
@@ -88,15 +80,19 @@ final class NioServerSocketChannel extends NioSelectableChannel {
    *
    * @param localAddress the server's address
    * @return {@code ServerSocketChannel}
-   * @throws InfluentIOException when ServerSocketChannel#open fails
    * @throws IllegalArgumentException when the local address is illegal or already bound
+   * @throws InfluentIOException when ServerSocketChannel#open fails
    */
   static NioServerSocketChannel open(final SocketAddress localAddress, final NioTcpConfig config) {
-    try {
-      return new NioServerSocketChannel(ServerSocketChannel.open(), localAddress, config);
-    } catch (final IOException e) {
-      throw new InfluentIOException("ServerSocketChannel#open failed", e);
-    }
+    final ServerSocketChannel channel = newChannel();
+    setOption(channel, StandardSocketOptions.SO_REUSEADDR, true);
+    bind(channel, localAddress, config.getBacklog().orElse(0));
+    config
+        .getReceiveBufferSize()
+        .ifPresent(
+            (receiveBufferSize) ->
+                setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize));
+    return new NioServerSocketChannel(channel, localAddress);
   }
 
   /**

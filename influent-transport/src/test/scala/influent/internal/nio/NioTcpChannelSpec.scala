@@ -16,21 +16,25 @@
 
 package influent.internal.nio
 
-import influent.exception.InfluentIOException
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{ClosedChannelException, SelectionKey, SocketChannel}
+
+import influent.exception.InfluentIOException
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
 class NioTcpChannelSpec extends WordSpec with MockitoSugar {
+  private[this] val remoteAddress = new InetSocketAddress("127.0.0.1", 24224)
+
   "write" should {
     "write bytes to the channel" in {
       val src = ByteBuffer.allocate(8)
       val socketChannel = mock[SocketChannel]
       when(socketChannel.write(src)).thenReturn(4)
-      val channel = new NioTcpChannel(socketChannel)
+      val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
       assert(channel.write(src) === true)
       verify(socketChannel).write(src)
@@ -42,7 +46,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val src = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.write(src)).thenThrow(new IOException())
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
         assertThrows[InfluentIOException](channel.write(src))
         verify(socketChannel).write(src)
@@ -56,7 +60,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       val dst = ByteBuffer.allocate(8)
       val socketChannel = mock[SocketChannel]
       when(socketChannel.read(dst)).thenReturn(4)
-      val channel = new NioTcpChannel(socketChannel)
+      val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
       assert(channel.read(dst) === true)
       verify(socketChannel, never()).close()
@@ -67,7 +71,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val dst = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.read(dst)).thenReturn(0)
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
         assert(channel.read(dst) === false)
         verify(socketChannel, never()).close()
@@ -79,7 +83,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val dst = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.read(dst)).thenReturn(-1)
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
         assert(channel.read(dst) === false)
         verify(socketChannel).close()
@@ -89,7 +93,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val dst = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.read(dst)).thenThrow(new ClosedChannelException())
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
         assert(channel.read(dst) === false)
         verify(socketChannel).close()
@@ -101,7 +105,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
         val dst = ByteBuffer.allocate(8)
         val socketChannel = mock[SocketChannel]
         when(socketChannel.read(dst)).thenThrow(new IOException())
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
         assertThrows[InfluentIOException](channel.read(dst))
         verify(socketChannel).close()
@@ -112,7 +116,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
   "register" should {
     "registers this channel to the event loop" in {
       val socketChannel = mock[SocketChannel]
-      val channel = new NioTcpChannel(socketChannel)
+      val channel = new NioTcpChannel(socketChannel, remoteAddress)
 
       val eventLoop = mock[NioEventLoop]
       val attachment = mock[NioAttachment]
@@ -130,7 +134,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
 
   "enableOpRead" should {
     "enable OP_READ" in {
-      val channel = new NioTcpChannel(mock[SocketChannel])
+      val channel = new NioTcpChannel(mock[SocketChannel], remoteAddress)
       val key = mock[SelectionKey]
       val eventLoop = mock[NioEventLoop]
       channel.onRegistered(key)
@@ -141,7 +145,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
 
   "enableOpWrite" should {
     "enable OP_WRITE" in {
-      val channel = new NioTcpChannel(mock[SocketChannel])
+      val channel = new NioTcpChannel(mock[SocketChannel], remoteAddress)
       val key = mock[SelectionKey]
       val eventLoop = mock[NioEventLoop]
       channel.onRegistered(key)
@@ -152,7 +156,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
 
   "disableOpWrite" should {
     "disable OP_WRITE" in {
-      val channel = new NioTcpChannel(mock[SocketChannel])
+      val channel = new NioTcpChannel(mock[SocketChannel], remoteAddress)
       val key = mock[SelectionKey]
       val eventLoop = mock[NioEventLoop]
       channel.onRegistered(key)
@@ -164,7 +168,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
   "close" should {
     "close the socket channel" in {
       val socketChannel = mock[SocketChannel]
-      val channel = new NioTcpChannel(socketChannel)
+      val channel = new NioTcpChannel(socketChannel, remoteAddress)
       assert(channel.close() === ())
       verify(socketChannel).close()
     }
@@ -173,7 +177,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       "it fails closing the socket channel" in {
         val socketChannel = mock[SocketChannel]
         when(socketChannel.close()).thenThrow(new IOException)
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
         assert(channel.close() === ())
         verify(socketChannel).close()
       }
@@ -185,7 +189,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       "the channel is open" in {
         val socketChannel = mock[SocketChannel]
         when(socketChannel.isOpen).thenReturn(true)
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
         assert(channel.isOpen)
       }
     }
@@ -194,7 +198,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
       "the channel is closed" in {
         val socketChannel = mock[SocketChannel]
         when(socketChannel.isOpen).thenReturn(false)
-        val channel = new NioTcpChannel(socketChannel)
+        val channel = new NioTcpChannel(socketChannel, remoteAddress)
         assert(!channel.isOpen)
       }
     }
@@ -203,7 +207,7 @@ class NioTcpChannelSpec extends WordSpec with MockitoSugar {
   "unwrap" should {
     "return the underlying channel" in {
       val socketChannel = mock[SocketChannel]
-      val channel = new NioTcpChannel(socketChannel)
+      val channel = new NioTcpChannel(socketChannel, remoteAddress)
       assert(channel.unwrap() === socketChannel)
     }
   }

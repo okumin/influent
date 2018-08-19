@@ -16,21 +16,24 @@
 
 package influent.internal.nio
 
-import influent.exception.InfluentIOException
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{DatagramChannel, SelectionKey}
 import java.util.Optional
+
+import influent.exception.InfluentIOException
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
 class NioUdpChannelSpec extends WordSpec with MockitoSugar {
+  private[this] val localAddress = new InetSocketAddress("127.0.0.1", 24224)
+
   "send" should {
     "send and return true" in {
       val datagramChannel = mock[DatagramChannel]
-      val channel = new NioUdpChannel(datagramChannel)
+      val channel = new NioUdpChannel(datagramChannel, localAddress)
 
       val src = ByteBuffer.allocate(8)
       val target = new InetSocketAddress(8000)
@@ -45,7 +48,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     "not send and return false" when {
       "there is no sufficient room in the socket buffer" in {
         val datagramChannel = mock[DatagramChannel]
-        val channel = new NioUdpChannel(datagramChannel)
+        val channel = new NioUdpChannel(datagramChannel, localAddress)
 
         val src = ByteBuffer.allocate(8)
         val target = new InetSocketAddress(8000)
@@ -61,7 +64,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     "fail with InfluentIOException" when {
       "some IO error occurs" in {
         val datagramChannel = mock[DatagramChannel]
-        val channel = new NioUdpChannel(datagramChannel)
+        val channel = new NioUdpChannel(datagramChannel, localAddress)
 
         val src = ByteBuffer.allocate(8)
         val target = new InetSocketAddress(8000)
@@ -77,7 +80,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
   "receive" should {
     "return SocketAddress" in {
       val datagramChannel = mock[DatagramChannel]
-      val channel = new NioUdpChannel(datagramChannel)
+      val channel = new NioUdpChannel(datagramChannel, localAddress)
 
       val dst = ByteBuffer.allocate(8)
       val expected = new InetSocketAddress(8000)
@@ -92,7 +95,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     "return Optional.empty()" when {
       "no datagram is available" in {
         val datagramChannel = mock[DatagramChannel]
-        val channel = new NioUdpChannel(datagramChannel)
+        val channel = new NioUdpChannel(datagramChannel, localAddress)
 
         val dst = ByteBuffer.allocate(8)
         when(datagramChannel.receive(dst)).thenReturn(null)
@@ -107,7 +110,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     "fail with InfluentIOException" when {
       "some IO error occurs" in {
         val datagramChannel = mock[DatagramChannel]
-        val channel = new NioUdpChannel(datagramChannel)
+        val channel = new NioUdpChannel(datagramChannel, localAddress)
 
         val dst = ByteBuffer.allocate(8)
         when(datagramChannel.receive(dst)).thenThrow(new IOException())
@@ -122,7 +125,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
   "register" should {
     "registers this channel to the event loop" in {
       val datagramChannel = mock[DatagramChannel]
-      val channel = new NioUdpChannel(datagramChannel)
+      val channel = new NioUdpChannel(datagramChannel, localAddress)
 
       val eventLoop = mock[NioEventLoop]
       val attachment = mock[NioAttachment]
@@ -140,7 +143,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
 
   "enableOpWrite" should {
     "enable OP_WRITE" in {
-      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val channel = new NioUdpChannel(mock[DatagramChannel], localAddress)
       val key = mock[SelectionKey]
       val eventLoop = mock[NioEventLoop]
       channel.onRegistered(key)
@@ -151,7 +154,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
 
   "disableOpWrite" should {
     "disable OP_WRITE" in {
-      val channel = new NioUdpChannel(mock[DatagramChannel])
+      val channel = new NioUdpChannel(mock[DatagramChannel], localAddress)
       val key = mock[SelectionKey]
       val eventLoop = mock[NioEventLoop]
       channel.onRegistered(key)
@@ -163,7 +166,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
   "close" should {
     "close the datagram channel" in {
       val datagramChannel = mock[DatagramChannel]
-      val channel = new NioUdpChannel(datagramChannel)
+      val channel = new NioUdpChannel(datagramChannel, localAddress)
 
       assert(channel.close() === ())
       verify(datagramChannel).close()
@@ -173,7 +176,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
       "closing the datagram channel fails" in {
         val datagramChannel = mock[DatagramChannel]
         when(datagramChannel.close()).thenThrow(new IOException())
-        val channel = new NioUdpChannel(datagramChannel)
+        val channel = new NioUdpChannel(datagramChannel, localAddress)
 
         assert(channel.close() === ())
         verify(datagramChannel).close()
@@ -184,7 +187,7 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
   "unwrap" should {
     "return the underlying channel" in {
       val datagramChannel = mock[DatagramChannel]
-      val channel = new NioUdpChannel(datagramChannel)
+      val channel = new NioUdpChannel(datagramChannel, localAddress)
       assert(channel.unwrap() === datagramChannel)
     }
   }

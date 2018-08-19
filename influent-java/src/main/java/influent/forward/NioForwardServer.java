@@ -16,16 +16,16 @@
 
 package influent.forward;
 
-import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
 import influent.internal.nio.NioChannelConfig;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioTcpAcceptor;
 import influent.internal.nio.NioTcpConfig;
+import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 
 /** A {@code ForwardServer} implemented by NIO. */
 final class NioForwardServer implements ForwardServer {
@@ -77,7 +77,7 @@ final class NioForwardServer implements ForwardServer {
                   tcpConfig,
                   security);
     }
-    new NioTcpAcceptor(localAddress, bossEventLoop, channelFactory, tcpConfig);
+    NioTcpAcceptor.open(localAddress, bossEventLoop, channelFactory, tcpConfig);
     new NioUdpHeartbeatServer(localAddress, bossEventLoop);
   }
 

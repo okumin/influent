@@ -16,15 +16,15 @@
 
 package influent.forward;
 
+import influent.internal.nio.NioAttachment;
+import influent.internal.nio.NioEventLoop;
+import influent.internal.nio.NioUdpChannel;
+import influent.internal.util.ThreadSafeQueue;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.internal.nio.NioAttachment;
-import influent.internal.nio.NioEventLoop;
-import influent.internal.nio.NioUdpChannel;
-import influent.internal.util.ThreadSafeQueue;
 
 /**
  * A heartbeat server for forward protocol.
@@ -58,7 +58,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
    * @throws influent.exception.InfluentIOException if some IO error occurs
    */
   NioUdpHeartbeatServer(final SocketAddress localAddress, final NioEventLoop eventLoop) {
-    this(new NioUdpChannel(localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE), eventLoop);
+    this(NioUdpChannel.open(localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE), eventLoop);
     channel.register(eventLoop, true, false, this);
   }
 
