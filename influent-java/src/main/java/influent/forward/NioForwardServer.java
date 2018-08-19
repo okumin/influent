@@ -27,9 +27,7 @@ import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioTcpAcceptor;
 import influent.internal.nio.NioTcpConfig;
 
-/**
- * A {@code ForwardServer} implemented by NIO.
- */
+/** A {@code ForwardServer} implemented by NIO. */
 final class NioForwardServer implements ForwardServer {
   private final NioEventLoop bossEventLoop;
   private final NioEventLoopPool workerEventLoopPool;
@@ -43,48 +41,54 @@ final class NioForwardServer implements ForwardServer {
    * @param tcpConfig the TCP config
    * @param workerPoolSize the event loop pool size for workers
    * @param channelConfig the channel configuration
-   * @throws IllegalArgumentException if any of parameter is invalid
-   *                                  e.g. the local address is already used
+   * @throws IllegalArgumentException if any of parameter is invalid e.g. the local address is
+   *     already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
    */
-  NioForwardServer(final SocketAddress localAddress,
-                   final ForwardCallback callback,
-                   final long chunkSizeLimit,
-                   final NioTcpConfig tcpConfig,
-                   final int workerPoolSize,
-                   final NioChannelConfig channelConfig,
-                   final ForwardSecurity security) {
+  NioForwardServer(
+      final SocketAddress localAddress,
+      final ForwardCallback callback,
+      final long chunkSizeLimit,
+      final NioTcpConfig tcpConfig,
+      final int workerPoolSize,
+      final NioChannelConfig channelConfig,
+      final ForwardSecurity security) {
     bossEventLoop = NioEventLoop.open();
     workerEventLoopPool = NioEventLoopPool.open(workerPoolSize);
     final Consumer<SocketChannel> channelFactory;
     if (channelConfig.isSslEnabled()) {
-      channelFactory = (socketChannel) -> new NioSslForwardConnection(
-          socketChannel, workerEventLoopPool.next(), callback,
-          channelConfig.createSSLEngine(), chunkSizeLimit, tcpConfig
-      );
+      channelFactory =
+          (socketChannel) ->
+              new NioSslForwardConnection(
+                  socketChannel,
+                  workerEventLoopPool.next(),
+                  callback,
+                  channelConfig.createSSLEngine(),
+                  chunkSizeLimit,
+                  tcpConfig);
     } else {
-      channelFactory = (socketChannel) -> new NioForwardConnection(
-          socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, tcpConfig, security
-      );
+      channelFactory =
+          (socketChannel) ->
+              new NioForwardConnection(
+                  socketChannel,
+                  workerEventLoopPool.next(),
+                  callback,
+                  chunkSizeLimit,
+                  tcpConfig,
+                  security);
     }
-    new NioTcpAcceptor(
-        localAddress, bossEventLoop, channelFactory, tcpConfig
-    );
+    new NioTcpAcceptor(localAddress, bossEventLoop, channelFactory, tcpConfig);
     new NioUdpHeartbeatServer(localAddress, bossEventLoop);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void start(final ThreadFactory threadFactory) {
     workerEventLoopPool.start(threadFactory);
     threadFactory.newThread(bossEventLoop).start();
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public CompletableFuture<Void> shutdown() {
     return bossEventLoop.shutdown().thenCompose(x -> workerEventLoopPool.shutdown());

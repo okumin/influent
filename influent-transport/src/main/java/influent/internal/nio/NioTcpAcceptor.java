@@ -26,7 +26,8 @@ import influent.exception.InfluentIOException;
 /**
  * A TCP acceptor.
  *
- * {@code NioTcpAcceptor} is not thread-safe and expected to be executed on the event loop thread.
+ * <p>{@code NioTcpAcceptor} is not thread-safe and expected to be executed on the event loop
+ * thread.
  */
 public final class NioTcpAcceptor implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpAcceptor.class);
@@ -34,8 +35,8 @@ public final class NioTcpAcceptor implements NioAttachment {
   private final Consumer<SocketChannel> callback;
   private final NioServerSocketChannel serverSocketChannel;
 
-  NioTcpAcceptor(final Consumer<SocketChannel> callback,
-      final NioServerSocketChannel serverSocketChannel) {
+  NioTcpAcceptor(
+      final Consumer<SocketChannel> callback, final NioServerSocketChannel serverSocketChannel) {
     this.callback = callback;
     this.serverSocketChannel = serverSocketChannel;
   }
@@ -50,18 +51,18 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws IllegalArgumentException if the given local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioTcpAcceptor(final SocketAddress localAddress, final NioEventLoop eventLoop,
-      final Consumer<SocketChannel> callback, final NioTcpConfig tcpConfig) {
+  public NioTcpAcceptor(
+      final SocketAddress localAddress,
+      final NioEventLoop eventLoop,
+      final Consumer<SocketChannel> callback,
+      final NioTcpConfig tcpConfig) {
     this.callback = callback;
     serverSocketChannel = NioServerSocketChannel.open(localAddress, tcpConfig);
     serverSocketChannel.register(eventLoop, this);
     logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
   }
 
-  /**
-   * Handles an accept event.
-   * This method never fails.
-   */
+  /** Handles an accept event. This method never fails. */
   @Override
   public void onAcceptable() {
     while (true) {
@@ -77,18 +78,14 @@ public final class NioTcpAcceptor implements NioAttachment {
     }
   }
 
-  /**
-   * Closes this {@code NioTcpAcceptor}.
-   */
+  /** Closes this {@code NioTcpAcceptor}. */
   @Override
   public void close() {
     serverSocketChannel.close();
     logger.info("The acceptor bound with {} closed.", serverSocketChannel.getLocalAddress());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "NioTcpAcceptor(" + serverSocketChannel.getLocalAddress() + ")";

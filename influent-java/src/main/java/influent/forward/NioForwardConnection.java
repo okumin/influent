@@ -38,9 +38,7 @@ import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
 import influent.internal.util.ThreadSafeQueue;
 
-/**
- * A connection for forward protocol.
- */
+/** A connection for forward protocol. */
 final class NioForwardConnection implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioForwardConnection.class);
   private static final String ACK_KEY = "ack";
@@ -60,14 +58,20 @@ final class NioForwardConnection implements NioAttachment {
   private final byte[] userAuth = new byte[16];
 
   enum ConnectionState {
-    HELO, PINGPONG, ESTABLISHED
+    HELO,
+    PINGPONG,
+    ESTABLISHED
   }
 
   private ConnectionState state;
 
-  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final MsgpackStreamUnpacker unpacker,
-      final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
+  NioForwardConnection(
+      final NioTcpChannel channel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final MsgpackStreamUnpacker unpacker,
+      final MsgpackForwardRequestDecoder decoder,
+      final ForwardSecurity security) {
     this.channel = channel;
     this.eventLoop = eventLoop;
     this.callback = callback;
@@ -77,10 +81,19 @@ final class NioForwardConnection implements NioAttachment {
     state = ConnectionState.ESTABLISHED;
   }
 
-  NioForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final long chunkSizeLimit, final ForwardSecurity security) {
-    this(channel, eventLoop, callback, new MsgpackStreamUnpacker(chunkSizeLimit),
-        new MsgpackForwardRequestDecoder(), security);
+  NioForwardConnection(
+      final NioTcpChannel channel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final long chunkSizeLimit,
+      final ForwardSecurity security) {
+    this(
+        channel,
+        eventLoop,
+        callback,
+        new MsgpackStreamUnpacker(chunkSizeLimit),
+        new MsgpackForwardRequestDecoder(),
+        security);
   }
 
   /**
@@ -93,10 +106,15 @@ final class NioForwardConnection implements NioAttachment {
    * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
-  NioForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final long chunkSizeLimit, final NioTcpConfig tcpConfig,
+  NioForwardConnection(
+      final SocketChannel socketChannel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final long chunkSizeLimit,
+      final NioTcpConfig tcpConfig,
       final ForwardSecurity security) {
-    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, chunkSizeLimit, security);
+    this(
+        new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, chunkSizeLimit, security);
 
     if (this.security.isEnabled()) {
       try {
@@ -160,11 +178,12 @@ final class NioForwardConnection implements NioAttachment {
   public void onReadable() {
     switch (state) {
       case PINGPONG:
-        receivePing(result -> {
-          responses.enqueue(generatePong(result));
-          channel.enableOpWrite(eventLoop);
-          state = ConnectionState.ESTABLISHED;
-        });
+        receivePing(
+            result -> {
+              responses.enqueue(generatePong(result));
+              channel.enableOpWrite(eventLoop);
+              state = ConnectionState.ESTABLISHED;
+            });
         break;
       case ESTABLISHED:
         receiveRequests();
@@ -177,54 +196,60 @@ final class NioForwardConnection implements NioAttachment {
 
   private void receivePing(Consumer<CheckPingResult> checkPingResultConsumer) {
     // TODO: optimize
-    final Supplier<ByteBuffer> supplier = () -> {
-      final ByteBuffer buffer = ByteBuffer.allocate(1024);
-      if (!channel.read(buffer)) {
-        return null;
-      }
-      buffer.flip();
-      return buffer;
-    };
+    final Supplier<ByteBuffer> supplier =
+        () -> {
+          final ByteBuffer buffer = ByteBuffer.allocate(1024);
+          if (!channel.read(buffer)) {
+            return null;
+          }
+          buffer.flip();
+          return buffer;
+        };
     unpacker.feed(supplier, channel);
     while (unpacker.hasNext()) {
       try {
         checkPingResultConsumer.accept(pingDecoder.decode(unpacker.next()));
       } catch (final IllegalArgumentException e) {
         logger.error(
-            "Received an invalid ping message. remote address = " + channel.getRemoteAddress(), e
-        );
+            "Received an invalid ping message. remote address = " + channel.getRemoteAddress(), e);
       }
     }
   }
 
   private void receiveRequests() {
     // TODO: optimize
-    final Supplier<ByteBuffer> supplier = () -> {
-      final ByteBuffer buffer = ByteBuffer.allocate(1024);
-      if (!channel.read(buffer)) {
-        return null;
-      }
-      buffer.flip();
-      return buffer;
-    };
+    final Supplier<ByteBuffer> supplier =
+        () -> {
+          final ByteBuffer buffer = ByteBuffer.allocate(1024);
+          if (!channel.read(buffer)) {
+            return null;
+          }
+          buffer.flip();
+          return buffer;
+        };
     unpacker.feed(supplier, channel);
     while (unpacker.hasNext()) {
       try {
-        decoder.decode(unpacker.next()).ifPresent(result -> {
-          logger.debug(
-              "Received a forward request from {}. chunk_id = {}",
-              channel.getRemoteAddress(), result.getOption()
-          );
-          callback.consume(result.getStream()).thenRun(() -> {
-            // Executes on user's callback thread since the queue never block.
-            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
-            logger.debug("Completed the task. chunk_id = {}.", result.getOption());
-          });
-        });
+        decoder
+            .decode(unpacker.next())
+            .ifPresent(
+                result -> {
+                  logger.debug(
+                      "Received a forward request from {}. chunk_id = {}",
+                      channel.getRemoteAddress(),
+                      result.getOption());
+                  callback
+                      .consume(result.getStream())
+                      .thenRun(
+                          () -> {
+                            // Executes on user's callback thread since the queue never block.
+                            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
+                            logger.debug("Completed the task. chunk_id = {}.", result.getOption());
+                          });
+                });
       } catch (final IllegalArgumentException e) {
         logger.error(
-            "Received an invalid message. remote address = " + channel.getRemoteAddress(), e
-        );
+            "Received an invalid message. remote address = " + channel.getRemoteAddress(), e);
       }
     }
   }
@@ -249,12 +274,22 @@ final class NioForwardConnection implements NioAttachment {
   //      See also https://github.com/okumin/influent/pull/32#discussion_r145196969
   private ByteBuffer generateHelo() {
     // ['HELO', options(hash)]
-    // ['HELO', {'nonce' => nonce, 'auth' => user_auth_salt/empty string, 'keepalive' => true/false}].to_msgpack
+    // ['HELO', {'nonce' => nonce, 'auth' => user_auth_salt/empty string, 'keepalive' =>
+    // true/false}].to_msgpack
     MessageBufferPacker packer = MessagePack.newDefaultBufferPacker();
     try {
-      packer.packArrayHeader(2).packString("HELO").packMapHeader(3).packString("nonce")
-          .packBinaryHeader(16).writePayload(nonce).packString("auth").packBinaryHeader(16)
-          .writePayload(userAuth).packString("keepalive").packBoolean(true);
+      packer
+          .packArrayHeader(2)
+          .packString("HELO")
+          .packMapHeader(3)
+          .packString("nonce")
+          .packBinaryHeader(16)
+          .writePayload(nonce)
+          .packString("auth")
+          .packBinaryHeader(16)
+          .writePayload(userAuth)
+          .packString("keepalive")
+          .packBoolean(true);
     } catch (IOException e) {
       logger.error("Failed to pack HELO message", e);
     }
@@ -278,12 +313,21 @@ final class NioForwardConnection implements NioAttachment {
         md.update(security.getSelfHostname().getBytes());
         md.update(nonce);
         md.update(checkPingResult.getSharedKey().getBytes());
-        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
-            .packString("").packString(security.getSelfHostname())
+        packer
+            .packArrayHeader(5)
+            .packString("PONG")
+            .packBoolean(checkPingResult.isSucceeded())
+            .packString("")
+            .packString(security.getSelfHostname())
             .packString(generateHexString(md.digest()));
       } else {
-        packer.packArrayHeader(5).packString("PONG").packBoolean(checkPingResult.isSucceeded())
-            .packString(checkPingResult.getReason()).packString("").packString("");
+        packer
+            .packArrayHeader(5)
+            .packString("PONG")
+            .packBoolean(checkPingResult.isSucceeded())
+            .packString(checkPingResult.getReason())
+            .packString("")
+            .packString("");
       }
     } catch (IOException e) {
       logger.error("Failed to pack PONG message", e);

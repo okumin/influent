@@ -41,6 +41,7 @@ abstract class DecodeResult {
       return value;
     }
   }
+
   private static final class Continue extends DecodeResult {
     private final MsgpackIncrementalUnpacker next;
 

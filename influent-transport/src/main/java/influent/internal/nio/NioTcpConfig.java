@@ -30,15 +30,15 @@ public final class NioTcpConfig {
     /**
      * Sets the maximum number of pending connections for a server.
      *
-     * @param backlog the maximum number of pending connections
-     *                when 0 is given, the default value of JDK is used
+     * @param backlog the maximum number of pending connections when 0 is given, the default value
+     *     of JDK is used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
     public Builder backlog(final int backlog) {
       if (backlog < 0) {
-        throw new IllegalArgumentException("Backlog must be greater than or equal to 0. value = "
-            + backlog);
+        throw new IllegalArgumentException(
+            "Backlog must be greater than or equal to 0. value = " + backlog);
       }
       this.backlog = backlog;
       return this;
@@ -47,8 +47,8 @@ public final class NioTcpConfig {
     /**
      * Sets the SO_SNDBUF.
      *
-     * @param sendBufferSize the size of socket send buffers
-     *                       when 0 is given, the default value is used
+     * @param sendBufferSize the size of socket send buffers when 0 is given, the default value is
+     *     used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
@@ -64,8 +64,8 @@ public final class NioTcpConfig {
     /**
      * Sets the SO_RCVBUF.
      *
-     * @param receiveBufferSize the size of socket receive buffers
-     *                           when 0 is given, the default value is used
+     * @param receiveBufferSize the size of socket receive buffers when 0 is given, the default
+     *     value is used
      * @return this builder
      * @throws IllegalArgumentException when the size is less than 0
      */
@@ -101,8 +101,8 @@ public final class NioTcpConfig {
     }
 
     public NioTcpConfig build() {
-      return new NioTcpConfig(backlog, sendBufferSize, receiveBufferSize, keepAliveEnabled,
-          tcpNoDelayEnabled);
+      return new NioTcpConfig(
+          backlog, sendBufferSize, receiveBufferSize, keepAliveEnabled, tcpNoDelayEnabled);
     }
   }
 
@@ -112,8 +112,12 @@ public final class NioTcpConfig {
   private final boolean keepAliveEnabled;
   private final boolean tcpNoDelayEnabled;
 
-  NioTcpConfig(final int backlog, final int sendBufferSize, final int receiveBufferSize,
-      final boolean keepAliveEnabled, final boolean tcpNoDelayEnabled) {
+  NioTcpConfig(
+      final int backlog,
+      final int sendBufferSize,
+      final int receiveBufferSize,
+      final boolean keepAliveEnabled,
+      final boolean tcpNoDelayEnabled) {
     this.backlog = backlog;
     this.sendBufferSize = sendBufferSize;
     this.receiveBufferSize = receiveBufferSize;
@@ -122,46 +126,34 @@ public final class NioTcpConfig {
   }
 
   /**
-   * Returns the maximum number of pending connections for a server.
-   * Use default value when {@code OptionalInt.empty()} is returned.
+   * Returns the maximum number of pending connections for a server. Use default value when {@code
+   * OptionalInt.empty()} is returned.
    */
   OptionalInt getBacklog() {
     return backlog == 0 ? OptionalInt.empty() : OptionalInt.of(backlog);
   }
 
-  /**
-   * Returns the SO_SNDBUF.
-   * Use default value when {@code OptionalInt.empty()} is returned.
-   */
+  /** Returns the SO_SNDBUF. Use default value when {@code OptionalInt.empty()} is returned. */
   OptionalInt getSendBufferSize() {
     return sendBufferSize == 0 ? OptionalInt.empty() : OptionalInt.of(sendBufferSize);
   }
 
-  /**
-   * Returns the SO_RCVBUF.
-   * Use default value when {@code OptionalInt.empty()} is returned.
-   */
+  /** Returns the SO_RCVBUF. Use default value when {@code OptionalInt.empty()} is returned. */
   OptionalInt getReceiveBufferSize() {
     return receiveBufferSize == 0 ? OptionalInt.empty() : OptionalInt.of(receiveBufferSize);
   }
 
-  /**
-   * Returns the SO_KEEPALIVE.
-   */
+  /** Returns the SO_KEEPALIVE. */
   boolean getKeepAliveEnabled() {
     return keepAliveEnabled;
   }
 
-  /**
-   * Returns the TCP_NODELAY.
-   */
+  /** Returns the TCP_NODELAY. */
   boolean getTcpNoDelayEnabled() {
     return tcpNoDelayEnabled;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -171,27 +163,34 @@ public final class NioTcpConfig {
       return false;
     }
     final NioTcpConfig that = (NioTcpConfig) o;
-    return backlog == that.backlog && sendBufferSize == that.sendBufferSize
-        && receiveBufferSize == that.receiveBufferSize && keepAliveEnabled == that.keepAliveEnabled
+    return backlog == that.backlog
+        && sendBufferSize == that.sendBufferSize
+        && receiveBufferSize == that.receiveBufferSize
+        && keepAliveEnabled == that.keepAliveEnabled
         && tcpNoDelayEnabled == that.tcpNoDelayEnabled;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int hashCode() {
-    return Objects.hash(backlog, sendBufferSize, receiveBufferSize, keepAliveEnabled,
-        tcpNoDelayEnabled);
+    return Objects.hash(
+        backlog, sendBufferSize, receiveBufferSize, keepAliveEnabled, tcpNoDelayEnabled);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
-    return "NioTcpConfig{" + "backlog=" + backlog + ", sendBufferSize=" + sendBufferSize
-        + ", receiveBufferSize=" + receiveBufferSize + ", keepAliveEnabled=" + keepAliveEnabled
-        + ", tcpNoDelayEnabled=" + tcpNoDelayEnabled + '}';
+    return "NioTcpConfig{"
+        + "backlog="
+        + backlog
+        + ", sendBufferSize="
+        + sendBufferSize
+        + ", receiveBufferSize="
+        + receiveBufferSize
+        + ", keepAliveEnabled="
+        + keepAliveEnabled
+        + ", tcpNoDelayEnabled="
+        + tcpNoDelayEnabled
+        + '}';
   }
 }

@@ -28,9 +28,9 @@ import influent.internal.nio.NioTcpChannel;
 /**
  * An unpacker for a MessagePack stream.
  *
- * This is expected to be used in only Influent project.
+ * <p>This is expected to be used in only Influent project.
  *
- * {@code MsgpackStreamUnpacker} is not thread-safe.
+ * <p>{@code MsgpackStreamUnpacker} is not thread-safe.
  */
 public final class MsgpackStreamUnpacker {
   private final InfluentByteBuffer buffer;
@@ -43,8 +43,8 @@ public final class MsgpackStreamUnpacker {
   /**
    * Constructs a new {@code MsgpackStreamUnpacker}.
    *
-   * @param chunkSizeLimit the allowable chunk size
-   *                       {@code feed} fails when the size of reading chunk exceeds the limit
+   * @param chunkSizeLimit the allowable chunk size {@code feed} fails when the size of reading
+   *     chunk exceeds the limit
    */
   public MsgpackStreamUnpacker(final long chunkSizeLimit) {
     this.buffer = new InfluentByteBuffer(chunkSizeLimit);
@@ -56,8 +56,8 @@ public final class MsgpackStreamUnpacker {
    *
    * @param supplier supplier to produce ByteBuffer
    * @param channel channel
-   * @throws InfluentIOException when it fails reading from the channel
-   *                             or the chunk size exceeds the limit
+   * @throws InfluentIOException when it fails reading from the channel or the chunk size exceeds
+   *     the limit
    */
   public void feed(final Supplier<ByteBuffer> supplier, final NioTcpChannel channel) {
     boolean toBeContinued = true;
@@ -80,8 +80,11 @@ public final class MsgpackStreamUnpacker {
           currentChunkSize = 0;
         } else if (currentChunkSize >= chunkSizeLimit) {
           channel.close();
-          throw new InfluentIOException("The chunk size exceeds the limit. size = "
-              + buffer.remaining() + ", limit = " + chunkSizeLimit);
+          throw new InfluentIOException(
+              "The chunk size exceeds the limit. size = "
+                  + buffer.remaining()
+                  + ", limit = "
+                  + chunkSizeLimit);
         } else {
           currentUnpacker = result.next();
           break;
@@ -95,9 +98,7 @@ public final class MsgpackStreamUnpacker {
     }
   }
 
-  /**
-   * @return true if this {@code MsgpackStreamUnpacker} can return the next value
-   */
+  /** @return true if this {@code MsgpackStreamUnpacker} can return the next value */
   public boolean hasNext() {
     return !unpackedValues.isEmpty();
   }

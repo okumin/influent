@@ -38,9 +38,7 @@ import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
 import influent.internal.util.ThreadSafeQueue;
 
-/**
- * A connection for SSL/TLS forward protocol.
- */
+/** A connection for SSL/TLS forward protocol. */
 final class NioSslForwardConnection implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioSslForwardConnection.class);
   private static final String ACK_KEY = "ack";
@@ -58,8 +56,12 @@ final class NioSslForwardConnection implements NioAttachment {
   private ByteBuffer inboundNetworkBuffer = ByteBuffer.allocate(1024 * 1024);
   private final Queue<ByteBuffer> outboundNetworkBuffers = new LinkedList<>();
 
-  NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final SSLEngine engine, final MsgpackStreamUnpacker unpacker,
+  NioSslForwardConnection(
+      final NioTcpChannel channel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final SSLEngine engine,
+      final MsgpackStreamUnpacker unpacker,
       final MsgpackForwardRequestDecoder decoder) {
     this.channel = channel;
     this.eventLoop = eventLoop;
@@ -70,9 +72,18 @@ final class NioSslForwardConnection implements NioAttachment {
     inboundNetworkBuffer.position(inboundNetworkBuffer.limit());
   }
 
-  NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit) {
-    this(channel, eventLoop, callback, engine, new MsgpackStreamUnpacker(chunkSizeLimit),
+  NioSslForwardConnection(
+      final NioTcpChannel channel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final SSLEngine engine,
+      final long chunkSizeLimit) {
+    this(
+        channel,
+        eventLoop,
+        callback,
+        engine,
+        new MsgpackStreamUnpacker(chunkSizeLimit),
         new MsgpackForwardRequestDecoder());
   }
 
@@ -86,8 +97,12 @@ final class NioSslForwardConnection implements NioAttachment {
    * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
-  NioSslForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
+  NioSslForwardConnection(
+      final SocketChannel socketChannel,
+      final NioEventLoop eventLoop,
+      final ForwardCallback callback,
+      final SSLEngine engine,
+      final long chunkSizeLimit,
       final NioTcpConfig tcpConfig) {
     this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
 
@@ -139,33 +154,39 @@ final class NioSslForwardConnection implements NioAttachment {
 
   private void receiveRequests() {
     // TODO: optimize
-    final Supplier<ByteBuffer> supplier = () -> {
-      final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
-      receiveAndUnwrap(buffer);
-      buffer.flip();
-      if (!buffer.hasRemaining()) {
-        return null;
-      }
-      return buffer;
-    };
+    final Supplier<ByteBuffer> supplier =
+        () -> {
+          final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
+          receiveAndUnwrap(buffer);
+          buffer.flip();
+          if (!buffer.hasRemaining()) {
+            return null;
+          }
+          return buffer;
+        };
     unpacker.feed(supplier, channel);
     while (unpacker.hasNext()) {
       try {
-        decoder.decode(unpacker.next()).ifPresent(result -> {
-          logger.debug(
-              "Received a forward request from {}. chunk_id = {}",
-              channel.getRemoteAddress(), result.getOption()
-          );
-          callback.consume(result.getStream()).thenRun(() -> {
-            // Executes on user's callback thread since the queue never block.
-            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
-            logger.debug("Completed the task. chunk_id = {}.", result.getOption());
-          });
-        });
+        decoder
+            .decode(unpacker.next())
+            .ifPresent(
+                result -> {
+                  logger.debug(
+                      "Received a forward request from {}. chunk_id = {}",
+                      channel.getRemoteAddress(),
+                      result.getOption());
+                  callback
+                      .consume(result.getStream())
+                      .thenRun(
+                          () -> {
+                            // Executes on user's callback thread since the queue never block.
+                            result.getOption().getChunk().ifPresent(chunk -> completeTask(chunk));
+                            logger.debug("Completed the task. chunk_id = {}.", result.getOption());
+                          });
+                });
       } catch (final IllegalArgumentException e) {
         logger.error(
-            "Received an invalid message. remote address = " + channel.getRemoteAddress(), e
-        );
+            "Received an invalid message. remote address = " + channel.getRemoteAddress(), e);
       }
     }
   }

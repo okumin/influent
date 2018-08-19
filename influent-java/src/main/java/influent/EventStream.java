@@ -23,8 +23,8 @@ import java.util.Objects;
 /**
  * An event stream.
  *
- * This is not immutable when the origin of {@code entries} is mutated.
- * But instances of {@code EventStream} that this library returns are guaranteed immutable.
+ * <p>This is not immutable when the origin of {@code entries} is mutated. But instances of {@code
+ * EventStream} that this library returns are guaranteed immutable.
  */
 public final class EventStream {
   private final Tag tag;
@@ -47,23 +47,17 @@ public final class EventStream {
     return new EventStream(tag, entries);
   }
 
-  /**
-   * @return the tag
-   */
+  /** @return the tag */
   public Tag getTag() {
     return tag;
   }
 
-  /**
-   * @return the unmodifiable list of {@code EventEntry}
-   */
+  /** @return the unmodifiable list of {@code EventEntry} */
   public List<EventEntry> getEntries() {
     return entries;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -77,17 +71,13 @@ public final class EventStream {
         && Objects.equals(getEntries(), that.getEntries());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int hashCode() {
     return Objects.hash(getTag(), getEntries());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "EventStream(" + tag + ", " + entries + ")";

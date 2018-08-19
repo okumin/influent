@@ -32,9 +32,7 @@ import org.slf4j.LoggerFactory;
 import influent.exception.InfluentIOException;
 import influent.internal.util.Exceptions;
 
-/**
- * A non-blocking mode {@code DatagramChannel}.
- */
+/** A non-blocking mode {@code DatagramChannel}. */
 public final class NioUdpChannel extends NioSelectableChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
@@ -55,8 +53,8 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioUdpChannel(final SocketAddress localAddress, final int sendBufferSize,
-      final int receiveBufferSize) {
+  public NioUdpChannel(
+      final SocketAddress localAddress, final int sendBufferSize, final int receiveBufferSize) {
     this.localAddress = localAddress;
 
     try {
@@ -82,8 +80,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Sends a datagram.
-   * {@code send} sends all or nothing of {@code src}.
+   * Sends a datagram. {@code send} sends all or nothing of {@code src}.
    *
    * @param src the buffer to send
    * @param target the target address
@@ -126,16 +123,18 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Registers the this channel to the given {@code NioEventLoop}.
-   * This method is thread-safe.
+   * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
    *
    * @param eventLoop the {@code NioEventLoop}
    * @param opReadEnabled whether OP_READ is enabled or not
    * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final NioEventLoop eventLoop, final boolean opReadEnabled,
-      final boolean opWriteEnabled, final NioAttachment attachment) {
+  public void register(
+      final NioEventLoop eventLoop,
+      final boolean opReadEnabled,
+      final boolean opWriteEnabled,
+      final NioAttachment attachment) {
     int ops = 0;
     if (opReadEnabled) {
       ops |= SelectionKey.OP_READ;
@@ -147,8 +146,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Enables OP_WRITE.
-   * Operations are done asynchronously.
+   * Enables OP_WRITE. Operations are done asynchronously.
    *
    * @param eventLoop the {@code NioEventLoop}
    */
@@ -157,8 +155,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   }
 
   /**
-   * Disables OP_WRITE.
-   * Operations are done asynchronously.
+   * Disables OP_WRITE. Operations are done asynchronously.
    *
    * @param eventLoop the {@code NioEventLoop}
    */
@@ -166,33 +163,26 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
     eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
   }
 
-  /**
-   * Closes the {@code DatagramChannel}.
-   */
+  /** Closes the {@code DatagramChannel}. */
   @Override
   public void close() {
-    Exceptions.ignore(channel::close,
+    Exceptions.ignore(
+        channel::close,
         "An IO error occurred when closing DatagramChannel. local address = " + getLocalAddress());
   }
 
-  /**
-   * @return the local address
-   */
+  /** @return the local address */
   public SocketAddress getLocalAddress() {
     return localAddress;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   SelectableChannel unwrap() {
     return channel;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "NioUdpChannel(" + getLocalAddress() + ")";

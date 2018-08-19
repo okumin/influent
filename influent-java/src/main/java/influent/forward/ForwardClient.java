@@ -20,9 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Client ip/network authentication & per_host shared key
- */
+/** Client ip/network authentication & per_host shared key */
 public class ForwardClient {
   private String host = null;
   private String network = null;

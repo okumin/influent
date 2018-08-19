@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * A tag of fluentd's event.
  *
- * Instances of {@code Tag} are immutable.
+ * <p>Instances of {@code Tag} are immutable.
  */
 public final class Tag implements Comparable<Tag> {
   private final String name;
@@ -41,9 +41,7 @@ public final class Tag implements Comparable<Tag> {
     return new Tag(name);
   }
 
-  /**
-   * @return the tag name
-   */
+  /** @return the tag name */
   public String getName() {
     return name;
   }
@@ -52,18 +50,17 @@ public final class Tag implements Comparable<Tag> {
    * Compares two tags lexicographically.
    *
    * @param o the {@code Tag} to be compared
-   * @return the value 0 if the name of this tag is equal to that of the argument
-   *         a value less than 0 if the name of this tag is lexicographically less than that of the argument
-   *         a value greater than 0 if the name of this tag is lexicographically greater than that of the argument
+   * @return the value 0 if the name of this tag is equal to that of the argument a value less than
+   *     0 if the name of this tag is lexicographically less than that of the argument a value
+   *     greater than 0 if the name of this tag is lexicographically greater than that of the
+   *     argument
    */
   @Override
   public int compareTo(final Tag o) {
     return getName().compareTo(o.getName());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -76,17 +73,13 @@ public final class Tag implements Comparable<Tag> {
     return Objects.equals(getName(), tag.getName());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public int hashCode() {
     return Objects.hash(getName());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public String toString() {
     return "Tag(" + getName() + ')';
