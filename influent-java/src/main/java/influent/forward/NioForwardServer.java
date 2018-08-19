@@ -60,10 +60,10 @@ final class NioForwardServer implements ForwardServer {
     if (channelConfig.isSslEnabled()) {
       channelFactory = (socketChannel) -> new NioSslForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback,
-          channelConfig.createSSLEngine(), chunkSizeLimit, tcpConfig
+          channelConfig.createSSLEngine(), chunkSizeLimit, tcpConfig, security
       );
     } else {
-      channelFactory = (socketChannel) -> new NioForwardConnection(
+      channelFactory = (socketChannel) -> new NioTcpForwardConnection(
           socketChannel, workerEventLoopPool.next(), callback, chunkSizeLimit, tcpConfig, security
       );
     }

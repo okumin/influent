@@ -16,64 +16,54 @@
 
 package influent.forward;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ReadOnlyBufferException;
-import java.nio.channels.SocketChannel;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.function.Supplier;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
-import influent.internal.util.ThreadSafeQueue;
+import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessagePack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
+import java.nio.channels.SocketChannel;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A connection for SSL/TLS forward protocol.
  */
-final class NioSslForwardConnection implements NioAttachment {
+final class NioSslForwardConnection extends NioForwardConnection implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioSslForwardConnection.class);
-  private static final String ACK_KEY = "ack";
 
-  private final NioTcpChannel channel;
-  private final NioEventLoop eventLoop;
-  private final ForwardCallback callback;
-  private final SSLEngine engine;
-  private final MsgpackStreamUnpacker unpacker;
-  private final MsgpackForwardRequestDecoder decoder;
+    private final SSLEngine engine;
 
-  private final ThreadSafeQueue<ByteBuffer> responses = new ThreadSafeQueue<>();
-
-  // Prepare a ByteBuffer with sufficient size
+    // Prepare a ByteBuffer with sufficient size
   private ByteBuffer inboundNetworkBuffer = ByteBuffer.allocate(1024 * 1024);
   private final Queue<ByteBuffer> outboundNetworkBuffers = new LinkedList<>();
 
   NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final SSLEngine engine, final MsgpackStreamUnpacker unpacker,
-      final MsgpackForwardRequestDecoder decoder) {
-    this.channel = channel;
-    this.eventLoop = eventLoop;
-    this.callback = callback;
-    this.engine = engine;
-    this.unpacker = unpacker;
-    this.decoder = decoder;
-    inboundNetworkBuffer.position(inboundNetworkBuffer.limit());
+      final MsgpackForwardRequestDecoder decoder, final ForwardSecurity security) {
+      super(channel, eventLoop, callback, unpacker, decoder, security);
+      this.engine = engine;
+      inboundNetworkBuffer.position(inboundNetworkBuffer.limit());
   }
 
   NioSslForwardConnection(final NioTcpChannel channel, final NioEventLoop eventLoop,
-      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit) {
+      final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
+      final ForwardSecurity security) {
     this(channel, eventLoop, callback, engine, new MsgpackStreamUnpacker(chunkSizeLimit),
-        new MsgpackForwardRequestDecoder());
+        new MsgpackForwardRequestDecoder(), security);
   }
 
   /**
@@ -88,10 +78,18 @@ final class NioSslForwardConnection implements NioAttachment {
    */
   NioSslForwardConnection(final SocketChannel socketChannel, final NioEventLoop eventLoop,
       final ForwardCallback callback, final SSLEngine engine, final long chunkSizeLimit,
-      final NioTcpConfig tcpConfig) {
-    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
+      final NioTcpConfig tcpConfig, final ForwardSecurity security) {
+    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit,
+        security);
 
-    channel.register(eventLoop, true, false, this);
+    if (security.isEnabled()) {
+      state = ConnectionState.HELO;
+      channel.register(eventLoop, false, true, this);
+      responses.enqueue(generateHelo());
+    } else {
+      state = ConnectionState.ESTABLISHED;
+      channel.register(eventLoop, true, false, this);
+    }
   }
 
   /**
@@ -108,10 +106,21 @@ final class NioSslForwardConnection implements NioAttachment {
       return;
     }
 
+    boolean isWrittenAll = false;
     while (responses.nonEmpty()) {
       final ByteBuffer head = responses.dequeue();
-      wrapAndSend(head);
+      isWrittenAll &= wrapAndSend(head);
     }
+
+    if (isWrittenAll) {
+      channel.disableOpWrite(eventLoop);
+      if (state == ConnectionState.HELO) {
+        state = ConnectionState.PINGPONG;
+        channel.enableOpRead(eventLoop);
+        // TODO disconnect after writing failed PONG
+      }
+    }
+
     if (!channel.isOpen()) {
       close();
     }
@@ -131,9 +140,43 @@ final class NioSslForwardConnection implements NioAttachment {
       return;
     }
 
-    receiveRequests();
+    switch (state) {
+      case PINGPONG:
+        receivePing(result -> {
+          responses.enqueue(generatePong(result));
+          channel.enableOpWrite(eventLoop);
+          state = ConnectionState.ESTABLISHED;
+        });
+        break;
+      case ESTABLISHED:
+        receiveRequests();
+        break;
+    }
     if (!channel.isOpen()) {
       close();
+    }
+  }
+
+  private void receivePing(Consumer<CheckPingResult> checkPingResultConsumer) {
+    // TODO: optimize
+    final Supplier<ByteBuffer> supplier = () -> {
+      final ByteBuffer buffer = ByteBuffer.allocate(1024);
+      receiveAndUnwrap(buffer);
+      buffer.flip();
+      if (!buffer.hasRemaining()) {
+        return null;
+      }
+      return buffer;
+    };
+    unpacker.feed(supplier, channel);
+    while (unpacker.hasNext()) {
+      try {
+        checkPingResultConsumer.accept(pingDecoder.decode(unpacker.next()));
+      } catch (final IllegalArgumentException e) {
+        logger.error(
+                "Received an invalid ping message. remote address = " + channel.getRemoteAddress(), e
+        );
+      }
     }
   }
 
@@ -305,7 +348,7 @@ final class NioSslForwardConnection implements NioAttachment {
         && status != SSLEngineResult.HandshakeStatus.FINISHED;
   }
 
-  @Override
+    @Override
   public void close() {
     // TODO: graceful stop
     channel.close();
