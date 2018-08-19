@@ -16,6 +16,13 @@
 
 package influent.forward;
 
+import influent.exception.InfluentIOException;
+import influent.internal.msgpack.MsgpackStreamUnpacker;
+import influent.internal.nio.NioAttachment;
+import influent.internal.nio.NioEventLoop;
+import influent.internal.nio.NioTcpChannel;
+import influent.internal.nio.NioTcpConfig;
+import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
@@ -30,13 +37,6 @@ import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
-import influent.internal.msgpack.MsgpackStreamUnpacker;
-import influent.internal.nio.NioAttachment;
-import influent.internal.nio.NioEventLoop;
-import influent.internal.nio.NioTcpChannel;
-import influent.internal.nio.NioTcpConfig;
-import influent.internal.util.ThreadSafeQueue;
 
 /** A connection for SSL/TLS forward protocol. */
 final class NioSslForwardConnection implements NioAttachment {
@@ -104,7 +104,7 @@ final class NioSslForwardConnection implements NioAttachment {
       final SSLEngine engine,
       final long chunkSizeLimit,
       final NioTcpConfig tcpConfig) {
-    this(new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
+    this(NioTcpChannel.open(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
 
     channel.register(eventLoop, true, false, this);
   }

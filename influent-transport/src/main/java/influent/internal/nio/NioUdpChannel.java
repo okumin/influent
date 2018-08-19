@@ -16,8 +16,11 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
+import influent.internal.util.Exceptions;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
@@ -29,23 +32,54 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
 
-/** A non-blocking mode {@code DatagramChannel}. */
+/** A non-blocking {@code DatagramChannel}. */
 public final class NioUdpChannel extends NioSelectableChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
-  private final SocketAddress localAddress;
   private final DatagramChannel channel;
+  private final SocketAddress localAddress;
 
-  NioUdpChannel(final DatagramChannel channel) {
+  NioUdpChannel(final DatagramChannel channel, SocketAddress localAddress) {
     this.channel = channel;
-    this.localAddress = Exceptions.orNull(channel::getLocalAddress);
+    this.localAddress = localAddress;
+  }
+
+  private static DatagramChannel newChannel() {
+    try {
+      return DatagramChannel.open();
+    } catch (final IOException e) {
+      throw new InfluentIOException("DatagramChannel#open failed", e);
+    }
+  }
+
+  private static void bind(final DatagramChannel channel, final SocketAddress localAddress) {
+    try {
+      channel.bind(localAddress);
+    } catch (final AlreadyBoundException | UnsupportedAddressTypeException e) {
+      throw new IllegalArgumentException("DatagramChannel#bind failed", e);
+    } catch (final SecurityException e) {
+      throw new AssertionError(e);
+    } catch (final IOException e) {
+      // ClosedChannelException is an IOException
+      throw new InfluentIOException("DatagramChannel#bind failed", e);
+    }
+  }
+
+  private static <T> void setOption(
+      final DatagramChannel channel, final SocketOption<T> name, final T value) {
+    try {
+      channel.setOption(name, value);
+    } catch (final UnsupportedOperationException | IllegalArgumentException e) {
+      throw new AssertionError(e);
+    } catch (final IOException e) {
+      // ClosedChannelException is an IOException
+      throw new InfluentIOException("DatagramChannel#setOption failed", e);
+    }
   }
 
   /**
-   * Constructs a new {@code NioUdpChannel}.
+   * Creates a new {@code NioUdpChannel}.
    *
    * @param localAddress the local address
    * @param sendBufferSize the size of socket send buffer
@@ -53,30 +87,20 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioUdpChannel(
+  public static NioUdpChannel open(
       final SocketAddress localAddress, final int sendBufferSize, final int receiveBufferSize) {
-    this.localAddress = localAddress;
-
-    try {
-      channel = DatagramChannel.open();
-      if (sendBufferSize > 0) {
-        channel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
-      }
-      if (receiveBufferSize > 0) {
-        channel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
-      }
-      channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-      channel.bind(localAddress);
-      logger.info("A NioUdpChannel is bound with {}.", localAddress);
-    } catch (final AlreadyBoundException | UnsupportedAddressTypeException e) {
-      final String message = "The given local address is invalid. address = " + localAddress;
-      throw new IllegalArgumentException(message, e);
-    } catch (final UnsupportedOperationException | IllegalArgumentException | SecurityException e) {
-      throw new AssertionError(e);
-    } catch (final IOException e) {
-      // ClosedChannelException is an IOException
-      throw new InfluentIOException("An unexpected IO error occurred.", e);
+    final DatagramChannel channel = newChannel();
+    if (sendBufferSize > 0) {
+      setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize);
     }
+    if (receiveBufferSize > 0) {
+      setOption(channel, StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
+    }
+    setOption(channel, StandardSocketOptions.SO_REUSEADDR, true);
+    bind(channel, localAddress);
+    final NioUdpChannel udpChannel = new NioUdpChannel(channel, localAddress);
+    logger.info("A NioUdpChannel is bound with {}.", localAddress);
+    return udpChannel;
   }
 
   /**

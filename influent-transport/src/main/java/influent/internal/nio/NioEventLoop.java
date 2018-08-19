@@ -16,6 +16,13 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
+import influent.internal.nio.NioEventLoopTask.Register;
+import influent.internal.nio.NioEventLoopTask.Select;
+import influent.internal.nio.NioEventLoopTask.UpdateInterestSet;
+import influent.internal.util.Exceptions;
+import influent.internal.util.Futures;
+import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
@@ -25,10 +32,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
-import influent.internal.util.Exceptions;
-import influent.internal.util.Futures;
-import influent.internal.util.ThreadSafeQueue;
 
 /**
  * An event loop for non-blocking IO.
@@ -98,7 +101,7 @@ public final class NioEventLoop implements Runnable {
           logger.error("NioEventLoopTask failed.", e);
         }
       }
-      tasks.enqueue(new NioEventLoopTask.Select(selector));
+      tasks.enqueue(Select.of(selector));
     }
   }
 
@@ -110,7 +113,7 @@ public final class NioEventLoop implements Runnable {
    * @param attachment the {@code NioAttachment}
    */
   void register(final NioSelectableChannel channel, final int ops, final NioAttachment attachment) {
-    addTask(new NioEventLoopTask.Register(selector, channel, ops, attachment));
+    addTask(Register.of(selector, channel, ops, attachment));
   }
 
   /**
@@ -121,7 +124,7 @@ public final class NioEventLoop implements Runnable {
    * @param ops the interest set to be enabled
    */
   void enableInterestSet(final SelectionKey key, final int ops) {
-    addTask(new NioEventLoopTask.UpdateInterestSet(key, current -> current | ops));
+    addTask(UpdateInterestSet.of(key, current -> current | ops));
   }
 
   /**
@@ -132,7 +135,7 @@ public final class NioEventLoop implements Runnable {
    * @param ops the interest set to be disabled
    */
   void disableInterestSet(final SelectionKey key, final int ops) {
-    addTask(new NioEventLoopTask.UpdateInterestSet(key, current -> current & ~ops));
+    addTask(UpdateInterestSet.of(key, current -> current & ~ops));
   }
 
   private void addTask(final NioEventLoopTask task) {

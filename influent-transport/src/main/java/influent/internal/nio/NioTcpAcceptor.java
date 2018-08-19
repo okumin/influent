@@ -16,12 +16,12 @@
 
 package influent.internal.nio;
 
+import influent.exception.InfluentIOException;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
 
 /**
  * A TCP acceptor.
@@ -32,17 +32,17 @@ import influent.exception.InfluentIOException;
 public final class NioTcpAcceptor implements NioAttachment {
   private static final Logger logger = LoggerFactory.getLogger(NioTcpAcceptor.class);
 
-  private final Consumer<SocketChannel> callback;
   private final NioServerSocketChannel serverSocketChannel;
+  private final Consumer<SocketChannel> callback;
 
   NioTcpAcceptor(
-      final Consumer<SocketChannel> callback, final NioServerSocketChannel serverSocketChannel) {
-    this.callback = callback;
+      final NioServerSocketChannel serverSocketChannel, final Consumer<SocketChannel> callback) {
     this.serverSocketChannel = serverSocketChannel;
+    this.callback = callback;
   }
 
   /**
-   * Constructs a new {@code NioTcpAcceptor}.
+   * Creates a new {@code NioTcpAcceptor}.
    *
    * @param localAddress the local address to bind
    * @param eventLoop the {@code NioEventLoop}
@@ -51,15 +51,17 @@ public final class NioTcpAcceptor implements NioAttachment {
    * @throws IllegalArgumentException if the given local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
-  public NioTcpAcceptor(
+  public static NioTcpAcceptor open(
       final SocketAddress localAddress,
       final NioEventLoop eventLoop,
       final Consumer<SocketChannel> callback,
       final NioTcpConfig tcpConfig) {
-    this.callback = callback;
-    serverSocketChannel = NioServerSocketChannel.open(localAddress, tcpConfig);
-    serverSocketChannel.register(eventLoop, this);
+    final NioServerSocketChannel serverSocketChannel =
+        NioServerSocketChannel.open(localAddress, tcpConfig);
+    final NioTcpAcceptor acceptor = new NioTcpAcceptor(serverSocketChannel, callback);
+    serverSocketChannel.register(eventLoop, acceptor);
     logger.info("A NioTcpAcceptor is bound with {}.", localAddress);
+    return acceptor;
   }
 
   /** Handles an accept event. This method never fails. */

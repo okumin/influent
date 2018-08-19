@@ -16,6 +16,13 @@
 
 package influent.forward;
 
+import influent.exception.InfluentIOException;
+import influent.internal.msgpack.MsgpackStreamUnpacker;
+import influent.internal.nio.NioAttachment;
+import influent.internal.nio.NioEventLoop;
+import influent.internal.nio.NioTcpChannel;
+import influent.internal.nio.NioTcpConfig;
+import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -30,13 +37,6 @@ import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import influent.exception.InfluentIOException;
-import influent.internal.msgpack.MsgpackStreamUnpacker;
-import influent.internal.nio.NioAttachment;
-import influent.internal.nio.NioEventLoop;
-import influent.internal.nio.NioTcpChannel;
-import influent.internal.nio.NioTcpConfig;
-import influent.internal.util.ThreadSafeQueue;
 
 /** A connection for forward protocol. */
 final class NioForwardConnection implements NioAttachment {
@@ -114,7 +114,11 @@ final class NioForwardConnection implements NioAttachment {
       final NioTcpConfig tcpConfig,
       final ForwardSecurity security) {
     this(
-        new NioTcpChannel(socketChannel, tcpConfig), eventLoop, callback, chunkSizeLimit, security);
+        NioTcpChannel.open(socketChannel, tcpConfig),
+        eventLoop,
+        callback,
+        chunkSizeLimit,
+        security);
 
     if (this.security.isEnabled()) {
       try {
