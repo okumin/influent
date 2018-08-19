@@ -8,7 +8,7 @@ lazy val influentJava = (project in file("influent-java"))
   .settings(
     name := "influent-java",
     libraryDependencies ++= Seq(
-      "org.msgpack" % "msgpack-core" % "0.8.13"
+      "org.msgpack" % "msgpack-core" % "0.8.16"
     )
   )
   .dependsOn(influentTransport)
@@ -38,15 +38,15 @@ lazy val influentJavaSample = (project in file("influent-java-sample"))
 lazy val commonSettings = Seq(
   organization := "com.okumin",
   version := "0.4.0-M1",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.6",
   fork in Test := true,
   javacOptions in (Compile, doc) ++= Seq("-locale", "en_US"),
   javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.25",
-    "org.mockito" % "mockito-core" % "2.15.0" % "test",
+    "org.mockito" % "mockito-core" % "2.21.0" % "test",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.13.5" % "test"
+    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
   ),
   // sbt-header settings
   organizationName := "okumin",
