@@ -22,6 +22,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -37,35 +38,37 @@ interface NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(Register.class);
 
     private final Selector selector;
-    private final NioSelectableChannel channel;
+    private final SelectableChannel channel;
+    private final NioSelectionKey key;
     private final int ops;
     private final NioAttachment attachment;
 
     private Register(
         final Selector selector,
-        final NioSelectableChannel channel,
+        final SelectableChannel channel,
+        final NioSelectionKey key,
         final int ops,
         final NioAttachment attachment) {
       this.selector = selector;
       this.channel = channel;
+      this.key = key;
       this.ops = ops;
       this.attachment = attachment;
     }
 
     static Register of(
         final Selector selector,
-        final NioSelectableChannel channel,
+        final SelectableChannel channel,
+        final NioSelectionKey key,
         final int ops,
         final NioAttachment attachment) {
-      return new Register(selector, channel, ops, attachment);
+      return new Register(selector, channel, key, ops, attachment);
     }
 
     @Override
     public void run() {
       try {
-        final SelectionKey key =
-            channel.unwrap().configureBlocking(false).register(selector, ops, attachment);
-        channel.onRegistered(key);
+        key.bind(channel.configureBlocking(false).register(selector, ops, attachment));
       } catch (final ClosedSelectorException
           | IllegalBlockingModeException
           | IllegalSelectorException e) {
@@ -81,25 +84,26 @@ interface NioEventLoopTask {
   final class UpdateInterestSet implements NioEventLoopTask {
     private static final Logger logger = LoggerFactory.getLogger(UpdateInterestSet.class);
 
-    private final SelectionKey key;
+    private final NioSelectionKey key;
     private final IntUnaryOperator updater;
 
-    private UpdateInterestSet(final SelectionKey key, final IntUnaryOperator updater) {
+    private UpdateInterestSet(final NioSelectionKey key, final IntUnaryOperator updater) {
       this.key = key;
       this.updater = updater;
     }
 
-    static UpdateInterestSet of(final SelectionKey key, final IntUnaryOperator updater) {
+    static UpdateInterestSet of(final NioSelectionKey key, final IntUnaryOperator updater) {
       return new UpdateInterestSet(key, updater);
     }
 
     @Override
     public void run() {
       try {
-        final int current = key.interestOps();
+        final SelectionKey underlying = key.unwrap();
+        final int current = underlying.interestOps();
         final int updated = updater.applyAsInt(current);
         if (updated != current) {
-          key.interestOps(updated);
+          underlying.interestOps(updated);
         }
       } catch (final CancelledKeyException | IllegalArgumentException e) {
         logger.error("UpdateInterestSet threw an exception.", e);

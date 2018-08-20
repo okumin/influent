@@ -25,6 +25,7 @@ import influent.internal.util.Futures;
 import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Set;
@@ -106,35 +107,44 @@ public final class NioEventLoop implements Runnable {
   }
 
   /**
-   * Registers a channel with this event loop. Operations are done asynchronously.
+   * Registers a channel with this event loop.
+   *
+   * <p>Operations are done asynchronously.
    *
    * @param channel the channel
+   * @param key the {@code NioSelectionKey}
    * @param ops the interest set
    * @param attachment the {@code NioAttachment}
    */
-  void register(final NioSelectableChannel channel, final int ops, final NioAttachment attachment) {
-    addTask(Register.of(selector, channel, ops, attachment));
+  void register(
+      final SelectableChannel channel,
+      final NioSelectionKey key,
+      final int ops,
+      final NioAttachment attachment) {
+    addTask(Register.of(selector, channel, key, ops, attachment));
   }
 
   /**
-   * Enables the given interest set on the given {@code SelectionKey}. Operations are done
-   * asynchronously.
+   * Enables the given interest set on the given {@code NioSelectionKey}.
    *
-   * @param key the {@code SelectionKey}
+   * <p>Operations are done asynchronously.
+   *
+   * @param key the {@code NioSelectionKey}
    * @param ops the interest set to be enabled
    */
-  void enableInterestSet(final SelectionKey key, final int ops) {
+  void enableInterestSet(final NioSelectionKey key, final int ops) {
     addTask(UpdateInterestSet.of(key, current -> current | ops));
   }
 
   /**
-   * Disables the given interest set on the given {@code SelectionKey}. Operations are done
-   * asynchronously.
+   * Disables the given interest set on the given {@code NioSelectionKey}.
    *
-   * @param key the {@code SelectionKey}
+   * <p>Operations are done asynchronously.
+   *
+   * @param key the {@code NioSelectionKey}
    * @param ops the interest set to be disabled
    */
-  void disableInterestSet(final SelectionKey key, final int ops) {
+  void disableInterestSet(final NioSelectionKey key, final int ops) {
     addTask(UpdateInterestSet.of(key, current -> current & ~ops));
   }
 

@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Optional;
@@ -34,11 +33,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A non-blocking {@code DatagramChannel}. */
-public final class NioUdpChannel extends NioSelectableChannel implements AutoCloseable {
+public final class NioUdpChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
   private final DatagramChannel channel;
   private final SocketAddress localAddress;
+
+  final NioSelectionKey key = NioSelectionKey.create();
 
   NioUdpChannel(final DatagramChannel channel, SocketAddress localAddress) {
     this.channel = channel;
@@ -166,7 +167,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
     if (opWriteEnabled) {
       ops |= SelectionKey.OP_WRITE;
     }
-    eventLoop.register(this, ops, attachment);
+    eventLoop.register(channel, key, ops, attachment);
   }
 
   /**
@@ -175,7 +176,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
    * @param eventLoop the {@code NioEventLoop}
    */
   public void enableOpWrite(final NioEventLoop eventLoop) {
-    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
   /**
@@ -184,7 +185,7 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
    * @param eventLoop the {@code NioEventLoop}
    */
   public void disableOpWrite(final NioEventLoop eventLoop) {
-    eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+    eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
   /** Closes the {@code DatagramChannel}. */
@@ -198,12 +199,6 @@ public final class NioUdpChannel extends NioSelectableChannel implements AutoClo
   /** @return the local address */
   public SocketAddress getLocalAddress() {
     return localAddress;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  SelectableChannel unwrap() {
-    return channel;
   }
 
   /** {@inheritDoc} */

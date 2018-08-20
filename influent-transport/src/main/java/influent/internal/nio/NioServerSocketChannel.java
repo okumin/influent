@@ -25,16 +25,17 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.NotYetBoundException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 
 /** A adapter of {@code ServerSocketChannel}. The main purpose is to handle complex errors. */
-final class NioServerSocketChannel extends NioSelectableChannel {
+final class NioServerSocketChannel {
   private final ServerSocketChannel channel;
   private final SocketAddress localAddress;
+
+  final NioSelectionKey key = NioSelectionKey.create();
 
   NioServerSocketChannel(final ServerSocketChannel channel, final SocketAddress localAddress) {
     this.channel = channel;
@@ -119,7 +120,11 @@ final class NioServerSocketChannel extends NioSelectableChannel {
     Exceptions.ignore(channel::close, "The acceptor bound with " + localAddress + " closed.");
   }
 
-  /** Returns server's address. This method does not return null even if this channel is closed. */
+  /**
+   * Returns server's address.
+   *
+   * <p>This method does not return null even if this channel is closed.
+   */
   SocketAddress getLocalAddress() {
     return localAddress;
   }
@@ -131,13 +136,7 @@ final class NioServerSocketChannel extends NioSelectableChannel {
    * @param attachment the attachment
    */
   void register(final NioEventLoop eventLoop, final NioAttachment attachment) {
-    eventLoop.register(this, SelectionKey.OP_ACCEPT, attachment);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  SelectableChannel unwrap() {
-    return channel;
+    eventLoop.register(channel, key, SelectionKey.OP_ACCEPT, attachment);
   }
 
   /** {@inheritDoc} */

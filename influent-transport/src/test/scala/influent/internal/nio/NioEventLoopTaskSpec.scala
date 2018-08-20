@@ -38,20 +38,19 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
       val selector = Selector.open()
       val ops = SelectionKey.OP_WRITE
       val attachment = new NopAttachment
-      val key = mock[SelectionKey]
+      val javaKey = mock[SelectionKey]
 
-      val javaChannel = mock[SelectableChannel]
-      when(javaChannel.configureBlocking(false)).thenReturn(javaChannel)
-      when(javaChannel.register(selector, ops, attachment)).thenReturn(key)
-      val channel = mock[NioSelectableChannel]
-      when(channel.unwrap()).thenReturn(javaChannel)
+      val channel = mock[SelectableChannel]
+      when(channel.configureBlocking(false)).thenReturn(channel)
+      when(channel.register(selector, ops, attachment)).thenReturn(javaKey)
+      val key = mock[NioSelectionKey]
 
-      val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
+      val task = NioEventLoopTask.Register.of(selector, channel, key, ops, attachment)
       task.run()
 
-      verify(javaChannel).configureBlocking(false)
-      verify(javaChannel).register(selector, ops, attachment)
-      verify(channel).onRegistered(key)
+      verify(channel).configureBlocking(false)
+      verify(channel).register(selector, ops, attachment)
+      verify(key).bind(javaKey)
     }
 
     "ignore errors" when {
@@ -66,17 +65,16 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val ops = SelectionKey.OP_WRITE
           val attachment = new NopAttachment
 
-          val javaChannel = mock[SelectableChannel]
-          when(javaChannel.configureBlocking(false)).thenThrow(error)
-          val channel = mock[NioSelectableChannel]
-          when(channel.unwrap()).thenReturn(javaChannel)
+          val channel = mock[SelectableChannel]
+          when(channel.configureBlocking(false)).thenThrow(error)
+          val key = mock[NioSelectionKey]
 
-          val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
+          val task = NioEventLoopTask.Register.of(selector, channel, key, ops, attachment)
           task.run()
 
-          verify(javaChannel).configureBlocking(false)
-          verify(javaChannel, never()).register(any(), anyInt(), any())
-          verify(channel, never()).onRegistered(any())
+          verify(channel).configureBlocking(false)
+          verify(channel, never()).register(any(), anyInt(), any())
+          verify(key, never()).bind(any())
         }
       }
 
@@ -91,18 +89,17 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
           val ops = SelectionKey.OP_WRITE
           val attachment = new NopAttachment
 
-          val javaChannel = mock[SelectableChannel]
-          when(javaChannel.configureBlocking(false)).thenReturn(javaChannel)
-          when(javaChannel.register(selector, ops, attachment)).thenThrow(error)
-          val channel = mock[NioSelectableChannel]
-          when(channel.unwrap()).thenReturn(javaChannel)
+          val channel = mock[SelectableChannel]
+          when(channel.configureBlocking(false)).thenReturn(channel)
+          when(channel.register(selector, ops, attachment)).thenThrow(error)
+          val key = mock[NioSelectionKey]
 
-          val task = NioEventLoopTask.Register.of(selector, channel, ops, attachment)
+          val task = NioEventLoopTask.Register.of(selector, channel, key, ops, attachment)
           task.run()
 
-          verify(javaChannel).configureBlocking(false)
-          verify(javaChannel).register(selector, ops, attachment)
-          verify(channel, never()).onRegistered(any())
+          verify(channel).configureBlocking(false)
+          verify(channel).register(selector, ops, attachment)
+          verify(key, never()).bind(any())
         }
       }
     }
@@ -114,36 +111,42 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
     }
 
     "update an interest set" in {
-      val key = mock[SelectionKey]
-      when(key.interestOps()).thenReturn(1)
+      val javaKey = mock[SelectionKey]
+      when(javaKey.interestOps()).thenReturn(1)
+      val key = NioSelectionKey.create()
+      key.bind(javaKey)
 
       val task = UpdateInterestSet.of(key, updater)
       task.run()
 
-      verify(key).interestOps(1 | 2)
+      verify(javaKey).interestOps(1 | 2)
     }
 
     "do nothing" when {
       "updated ops equals to the current ops" in {
-        val key = mock[SelectionKey]
-        when(key.interestOps()).thenReturn(1 | 2)
+        val javaKey = mock[SelectionKey]
+        when(javaKey.interestOps()).thenReturn(1 | 2)
+        val key = NioSelectionKey.create()
+        key.bind(javaKey)
 
         val task = UpdateInterestSet.of(key, updater)
         task.run()
 
-        verify(key, never()).interestOps(anyInt())
+        verify(javaKey, never()).interestOps(anyInt())
       }
     }
 
     "ignore the error" when {
       "it fails retrieving the interest set" in {
-        val key = mock[SelectionKey]
-        when(key.interestOps()).thenThrow(new CancelledKeyException)
+        val javaKey = mock[SelectionKey]
+        when(javaKey.interestOps()).thenThrow(new CancelledKeyException)
+        val key = NioSelectionKey.create()
+        key.bind(javaKey)
 
         val task = UpdateInterestSet.of(key, updater)
         task.run()
 
-        verify(key, never()).interestOps(anyInt())
+        verify(javaKey, never()).interestOps(anyInt())
       }
 
       "it fails configuring the interest set" in {
@@ -153,14 +156,16 @@ class NioEventLoopTaskSpec extends WordSpec with MockitoSugar {
         )
 
         errors.foreach { error =>
-          val key = mock[SelectionKey]
-          when(key.interestOps()).thenReturn(1)
-          when(key.interestOps(1)).thenThrow(error)
+          val javaKey = mock[SelectionKey]
+          when(javaKey.interestOps()).thenReturn(1)
+          when(javaKey.interestOps(1)).thenThrow(error)
+          val key = NioSelectionKey.create()
+          key.bind(javaKey)
 
           val task = UpdateInterestSet.of(key, updater)
           task.run()
 
-          verify(key).interestOps(3)
+          verify(javaKey).interestOps(3)
         }
       }
     }
