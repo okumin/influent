@@ -26,14 +26,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 /** A non-blocking {@code SocketChannel}. */
-public final class NioTcpChannel extends NioSelectableChannel implements AutoCloseable {
+public final class NioTcpChannel implements AutoCloseable {
   private final SocketChannel channel;
   private final SocketAddress remoteAddress;
+
+  final NioSelectionKey key = NioSelectionKey.create();
 
   NioTcpChannel(final SocketChannel channel, SocketAddress remoteAddress) {
     this.channel = channel;
@@ -153,7 +154,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
     if (opWriteEnabled) {
       ops |= SelectionKey.OP_WRITE;
     }
-    eventLoop.register(this, ops, attachment);
+    eventLoop.register(channel, key, ops, attachment);
   }
 
   /**
@@ -162,7 +163,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * @param eventLoop the {@code NioEventLoop}
    */
   public void enableOpRead(final NioEventLoop eventLoop) {
-    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_READ);
+    eventLoop.enableInterestSet(key, SelectionKey.OP_READ);
   }
 
   /**
@@ -171,7 +172,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * @param eventLoop the {@code NioEventLoop}
    */
   public void enableOpWrite(final NioEventLoop eventLoop) {
-    eventLoop.enableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
   /**
@@ -180,7 +181,7 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
    * @param eventLoop the {@code NioEventLoop}
    */
   public void disableOpWrite(final NioEventLoop eventLoop) {
-    eventLoop.disableInterestSet(selectionKey(), SelectionKey.OP_WRITE);
+    eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
   /** Closes the {@code SocketChannel}. */
@@ -201,12 +202,6 @@ public final class NioTcpChannel extends NioSelectableChannel implements AutoClo
   /** @return the remote address */
   public SocketAddress getRemoteAddress() {
     return remoteAddress;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  SelectableChannel unwrap() {
-    return channel;
   }
 
   /** {@inheritDoc} */
