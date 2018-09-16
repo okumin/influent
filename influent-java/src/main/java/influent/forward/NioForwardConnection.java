@@ -45,7 +45,6 @@ final class NioForwardConnection implements NioAttachment {
   private static final String ACK_KEY = "ack";
 
   private final NioTcpChannel channel;
-  private final NioEventLoop eventLoop;
   private final ForwardCallback callback;
   private final MsgpackStreamUnpacker unpacker;
   private final MsgpackForwardRequestDecoder decoder;
@@ -68,13 +67,11 @@ final class NioForwardConnection implements NioAttachment {
 
   NioForwardConnection(
       final NioTcpChannel channel,
-      final NioEventLoop eventLoop,
       final ForwardCallback callback,
       final MsgpackStreamUnpacker unpacker,
       final MsgpackForwardRequestDecoder decoder,
       final ForwardSecurity security) {
     this.channel = channel;
-    this.eventLoop = eventLoop;
     this.callback = callback;
     this.unpacker = unpacker;
     this.decoder = decoder;
@@ -84,13 +81,11 @@ final class NioForwardConnection implements NioAttachment {
 
   NioForwardConnection(
       final NioTcpChannel channel,
-      final NioEventLoop eventLoop,
       final ForwardCallback callback,
       final long chunkSizeLimit,
       final ForwardSecurity security) {
     this(
         channel,
-        eventLoop,
         callback,
         new MsgpackStreamUnpacker(chunkSizeLimit),
         new MsgpackForwardRequestDecoder(),
@@ -115,8 +110,7 @@ final class NioForwardConnection implements NioAttachment {
       final NioTcpConfig tcpConfig,
       final ForwardSecurity security) {
     this(
-        NioTcpPlaintextChannel.open(socketChannel, tcpConfig),
-        eventLoop,
+        NioTcpPlaintextChannel.open(socketChannel, eventLoop, tcpConfig),
         callback,
         chunkSizeLimit,
         security);
@@ -136,11 +130,11 @@ final class NioForwardConnection implements NioAttachment {
       node = security.findNode(((InetSocketAddress) channel.getRemoteAddress()).getAddress());
       state = ConnectionState.HELO;
       pingDecoder = new MsgPackPingDecoder(this.security, node.orElse(null), nonce, userAuth);
-      channel.register(eventLoop, false, true, this);
+      channel.register(false, true, this);
       responses.enqueue(generateHelo());
     } else {
       state = ConnectionState.ESTABLISHED;
-      channel.register(eventLoop, true, false, this);
+      channel.register(true, false, this);
     }
   }
 
@@ -152,10 +146,10 @@ final class NioForwardConnection implements NioAttachment {
   @Override
   public void onWritable() {
     if (sendResponses()) {
-      channel.disableOpWrite(eventLoop);
+      channel.disableOpWrite();
       if (state == ConnectionState.HELO) {
         state = ConnectionState.PINGPONG;
-        channel.enableOpRead(eventLoop);
+        channel.enableOpRead();
         // TODO disconnect after writing failed PONG
       }
     }
@@ -186,7 +180,7 @@ final class NioForwardConnection implements NioAttachment {
         receivePing(
             result -> {
               responses.enqueue(generatePong(result));
-              channel.enableOpWrite(eventLoop);
+              channel.enableOpWrite();
               state = ConnectionState.ESTABLISHED;
             });
         break;
@@ -268,7 +262,7 @@ final class NioForwardConnection implements NioAttachment {
       packer.packString(chunk);
       final ByteBuffer buffer = packer.toMessageBuffer().sliceAsByteBuffer();
       responses.enqueue(buffer);
-      channel.enableOpWrite(eventLoop);
+      channel.enableOpWrite();
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }
