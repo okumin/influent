@@ -45,7 +45,6 @@ final class NioSslForwardConnection implements NioAttachment {
   private static final String ACK_KEY = "ack";
 
   private final NioTcpChannel channel;
-  private final NioEventLoop eventLoop;
   private final ForwardCallback callback;
   private final SSLEngine engine;
   private final MsgpackStreamUnpacker unpacker;
@@ -59,13 +58,11 @@ final class NioSslForwardConnection implements NioAttachment {
 
   NioSslForwardConnection(
       final NioTcpChannel channel,
-      final NioEventLoop eventLoop,
       final ForwardCallback callback,
       final SSLEngine engine,
       final MsgpackStreamUnpacker unpacker,
       final MsgpackForwardRequestDecoder decoder) {
     this.channel = channel;
-    this.eventLoop = eventLoop;
     this.callback = callback;
     this.engine = engine;
     this.unpacker = unpacker;
@@ -75,13 +72,11 @@ final class NioSslForwardConnection implements NioAttachment {
 
   NioSslForwardConnection(
       final NioTcpChannel channel,
-      final NioEventLoop eventLoop,
       final ForwardCallback callback,
       final SSLEngine engine,
       final long chunkSizeLimit) {
     this(
         channel,
-        eventLoop,
         callback,
         engine,
         new MsgpackStreamUnpacker(chunkSizeLimit),
@@ -106,13 +101,12 @@ final class NioSslForwardConnection implements NioAttachment {
       final long chunkSizeLimit,
       final NioTcpConfig tcpConfig) {
     this(
-        NioTcpPlaintextChannel.open(socketChannel, tcpConfig),
-        eventLoop,
+        NioTcpPlaintextChannel.open(socketChannel, eventLoop, tcpConfig),
         callback,
         engine,
         chunkSizeLimit);
 
-    channel.register(eventLoop, true, false, this);
+    channel.register(true, false, this);
   }
 
   /**
@@ -124,7 +118,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onWritable() {
     if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        channel.enableOpWrite(eventLoop);
+        channel.enableOpWrite();
       }
       return;
     }
@@ -147,7 +141,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onReadable() {
     if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        channel.enableOpWrite(eventLoop);
+        channel.enableOpWrite();
       }
       return;
     }
@@ -206,7 +200,7 @@ final class NioSslForwardConnection implements NioAttachment {
       packer.packString(chunk);
       final ByteBuffer buffer = packer.toMessageBuffer().sliceAsByteBuffer();
       responses.enqueue(buffer);
-      channel.enableOpWrite(eventLoop);
+      channel.enableOpWrite();
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }
@@ -271,7 +265,7 @@ final class NioSslForwardConnection implements NioAttachment {
         }
       }
       if (outboundNetworkBuffers.isEmpty()) {
-        channel.disableOpWrite(eventLoop);
+        channel.disableOpWrite();
       }
       return outboundNetworkBuffers.isEmpty();
     } catch (final SSLException e) {

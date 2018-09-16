@@ -43,37 +43,21 @@ public interface NioTcpChannel extends AutoCloseable {
   /**
    * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
    *
-   * @param eventLoop the {@code NioEventLoop}
    * @param opReadEnabled whether OP_READ is enabled or not
    * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
   void register(
-      final NioEventLoop eventLoop,
-      final boolean opReadEnabled,
-      final boolean opWriteEnabled,
-      final NioAttachment attachment);
+      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment);
 
-  /**
-   * Enables OP_READ. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  void enableOpRead(final NioEventLoop eventLoop);
+  /** Enables OP_READ. Operations are done asynchronously. */
+  void enableOpRead();
 
-  /**
-   * Enables OP_WRITE. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  void enableOpWrite(final NioEventLoop eventLoop);
+  /** Enables OP_WRITE. Operations are done asynchronously. */
+  void enableOpWrite();
 
-  /**
-   * Disables OP_WRITE. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  void disableOpWrite(final NioEventLoop eventLoop);
+  /** Disables OP_WRITE. Operations are done asynchronously. */
+  void disableOpWrite();
 
   /** Closes the {@code SocketChannel}. */
   @Override

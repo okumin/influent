@@ -32,12 +32,17 @@ import java.nio.channels.SocketChannel;
 /** A non-blocking {@code SocketChannel}. */
 public final class NioTcpPlaintextChannel implements NioTcpChannel {
   private final SocketChannel channel;
+  private final NioEventLoop eventLoop;
   private final SocketAddress remoteAddress;
 
   final NioSelectionKey key = NioSelectionKey.create();
 
-  NioTcpPlaintextChannel(final SocketChannel channel, SocketAddress remoteAddress) {
+  NioTcpPlaintextChannel(
+      final SocketChannel channel,
+      final NioEventLoop eventLoop,
+      final SocketAddress remoteAddress) {
     this.channel = channel;
+    this.eventLoop = eventLoop;
     this.remoteAddress = remoteAddress;
   }
 
@@ -66,11 +71,12 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
    * Creates a new {@code NioTcpPlaintextChannel}.
    *
    * @param channel the accepted {@code SocketChannel}
+   * @param eventLoop the {@code NioEventLoop}
    * @param tcpConfig the {@code NioTcpConfig}
    * @throws InfluentIOException if some IO error occurs
    */
   public static NioTcpPlaintextChannel open(
-      final SocketChannel channel, final NioTcpConfig tcpConfig) {
+      final SocketChannel channel, final NioEventLoop eventLoop, final NioTcpConfig tcpConfig) {
     try {
       final SocketAddress remoteAddress = getRemoteAddress(channel);
       tcpConfig
@@ -80,7 +86,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
                   setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize));
       setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpConfig.getKeepAliveEnabled());
       setOption(channel, StandardSocketOptions.TCP_NODELAY, tcpConfig.getTcpNoDelayEnabled());
-      return new NioTcpPlaintextChannel(channel, remoteAddress);
+      return new NioTcpPlaintextChannel(channel, eventLoop, remoteAddress);
     } catch (final Exception e) {
       closeChannel(channel, Exceptions.orNull(channel::getRemoteAddress));
       throw e;
@@ -94,6 +100,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
    * @return true when some bytes are written
    * @throws InfluentIOException if some IO error occurs
    */
+  @Override
   public boolean write(final ByteBuffer src) {
     try {
       return channel.write(src) > 0;
@@ -115,6 +122,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
    * @return true when some bytes are read
    * @throws InfluentIOException if some IO error occurs
    */
+  @Override
   public boolean read(final ByteBuffer dst) {
     try {
       final int readSize = channel.read(dst);
@@ -138,16 +146,13 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
   /**
    * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
    *
-   * @param eventLoop the {@code NioEventLoop}
    * @param opReadEnabled whether OP_READ is enabled or not
    * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
+  @Override
   public void register(
-      final NioEventLoop eventLoop,
-      final boolean opReadEnabled,
-      final boolean opWriteEnabled,
-      final NioAttachment attachment) {
+      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment) {
     int ops = 0;
     if (opReadEnabled) {
       ops |= SelectionKey.OP_READ;
@@ -158,30 +163,21 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     eventLoop.register(channel, key, ops, attachment);
   }
 
-  /**
-   * Enables OP_READ. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  public void enableOpRead(final NioEventLoop eventLoop) {
+  /** Enables OP_READ. Operations are done asynchronously. */
+  @Override
+  public void enableOpRead() {
     eventLoop.enableInterestSet(key, SelectionKey.OP_READ);
   }
 
-  /**
-   * Enables OP_WRITE. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  public void enableOpWrite(final NioEventLoop eventLoop) {
+  /** Enables OP_WRITE. Operations are done asynchronously. */
+  @Override
+  public void enableOpWrite() {
     eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
-  /**
-   * Disables OP_WRITE. Operations are done asynchronously.
-   *
-   * @param eventLoop the {@code NioEventLoop}
-   */
-  public void disableOpWrite(final NioEventLoop eventLoop) {
+  /** Disables OP_WRITE. Operations are done asynchronously. */
+  @Override
+  public void disableOpWrite() {
     eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
@@ -196,11 +192,13 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
   }
 
   /** @return true if this channel is open */
+  @Override
   public boolean isOpen() {
     return Exceptions.orFalse(channel::isOpen);
   }
 
   /** @return the remote address */
+  @Override
   public SocketAddress getRemoteAddress() {
     return remoteAddress;
   }
