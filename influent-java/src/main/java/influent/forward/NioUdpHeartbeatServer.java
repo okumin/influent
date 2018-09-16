@@ -41,11 +41,9 @@ final class NioUdpHeartbeatServer implements NioAttachment {
   final ThreadSafeQueue<SocketAddress> replyTo = new ThreadSafeQueue<>();
   private final ByteBuffer receiveBuffer = ByteBuffer.allocate(1);
 
-  private final NioEventLoop eventLoop;
   private final NioUdpChannel channel;
 
-  NioUdpHeartbeatServer(final NioUdpChannel channel, final NioEventLoop eventLoop) {
-    this.eventLoop = eventLoop;
+  NioUdpHeartbeatServer(final NioUdpChannel channel) {
     this.channel = channel;
   }
 
@@ -53,20 +51,19 @@ final class NioUdpHeartbeatServer implements NioAttachment {
    * Constructs a new {@code NioUdpHeartbeatServer}.
    *
    * @param localAddress the local address
-   * @param eventLoop the {@code NioEventLoop}
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws influent.exception.InfluentIOException if some IO error occurs
    */
   NioUdpHeartbeatServer(final SocketAddress localAddress, final NioEventLoop eventLoop) {
-    this(NioUdpChannel.open(localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE), eventLoop);
-    channel.register(eventLoop, true, false, this);
+    this(NioUdpChannel.open(eventLoop, localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE));
+    channel.register(true, false, this);
   }
 
   /** Sends heartbeat responses. {@code NioUdpHeartbeatServer#onWritable} never fails. */
   @Override
   public void onWritable() {
     if (sendResponses()) {
-      channel.disableOpWrite(eventLoop);
+      channel.disableOpWrite();
     }
   }
 
@@ -106,7 +103,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
       }
     }
 
-    channel.enableOpWrite(eventLoop);
+    channel.enableOpWrite();
   }
 
   /** {@inheritDoc} */

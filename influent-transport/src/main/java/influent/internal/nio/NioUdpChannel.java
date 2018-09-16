@@ -37,12 +37,15 @@ public final class NioUdpChannel implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
   private final DatagramChannel channel;
+  private final NioEventLoop eventLoop;
   private final SocketAddress localAddress;
 
   final NioSelectionKey key = NioSelectionKey.create();
 
-  NioUdpChannel(final DatagramChannel channel, SocketAddress localAddress) {
+  NioUdpChannel(
+      final DatagramChannel channel, final NioEventLoop eventLoop, SocketAddress localAddress) {
     this.channel = channel;
+    this.eventLoop = eventLoop;
     this.localAddress = localAddress;
   }
 
@@ -83,13 +86,17 @@ public final class NioUdpChannel implements AutoCloseable {
    * Creates a new {@code NioUdpChannel}.
    *
    * @param localAddress the local address
+   * @param eventLoop the {@code NioEventLoop}
    * @param sendBufferSize the size of socket send buffer
    * @param receiveBufferSize the size of socket receive buffer
    * @throws IllegalArgumentException if the local address is invalid or already used
    * @throws InfluentIOException if some IO error occurs
    */
   public static NioUdpChannel open(
-      final SocketAddress localAddress, final int sendBufferSize, final int receiveBufferSize) {
+      final NioEventLoop eventLoop,
+      final SocketAddress localAddress,
+      final int sendBufferSize,
+      final int receiveBufferSize) {
     final DatagramChannel channel = newChannel();
     if (sendBufferSize > 0) {
       setOption(channel, StandardSocketOptions.SO_SNDBUF, sendBufferSize);
@@ -99,7 +106,7 @@ public final class NioUdpChannel implements AutoCloseable {
     }
     setOption(channel, StandardSocketOptions.SO_REUSEADDR, true);
     bind(channel, localAddress);
-    final NioUdpChannel udpChannel = new NioUdpChannel(channel, localAddress);
+    final NioUdpChannel udpChannel = new NioUdpChannel(channel, eventLoop, localAddress);
     logger.info("A NioUdpChannel is bound with {}.", localAddress);
     return udpChannel;
   }
@@ -150,16 +157,12 @@ public final class NioUdpChannel implements AutoCloseable {
   /**
    * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
    *
-   * @param eventLoop the {@code NioEventLoop}
    * @param opReadEnabled whether OP_READ is enabled or not
    * @param opWriteEnabled whether OP_WRITE is enabled or not
    * @param attachment the {@code NioAttachment}
    */
   public void register(
-      final NioEventLoop eventLoop,
-      final boolean opReadEnabled,
-      final boolean opWriteEnabled,
-      final NioAttachment attachment) {
+      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment) {
     int ops = 0;
     if (opReadEnabled) {
       ops |= SelectionKey.OP_READ;
@@ -171,20 +174,20 @@ public final class NioUdpChannel implements AutoCloseable {
   }
 
   /**
-   * Enables OP_WRITE. Operations are done asynchronously.
+   * Enables OP_WRITE.
    *
-   * @param eventLoop the {@code NioEventLoop}
+   * <p>Operations are done asynchronously.
    */
-  public void enableOpWrite(final NioEventLoop eventLoop) {
+  public void enableOpWrite() {
     eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
   /**
-   * Disables OP_WRITE. Operations are done asynchronously.
+   * Disables OP_WRITE.
    *
-   * @param eventLoop the {@code NioEventLoop}
+   * <p>Operations are done asynchronously.
    */
-  public void disableOpWrite(final NioEventLoop eventLoop) {
+  public void disableOpWrite() {
     eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
   }
 
