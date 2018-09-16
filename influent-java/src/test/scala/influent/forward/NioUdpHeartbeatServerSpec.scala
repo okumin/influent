@@ -16,11 +16,12 @@
 
 package influent.forward
 
-import influent.exception.InfluentIOException
-import influent.internal.nio.{NioEventLoop, NioUdpChannel}
 import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.ByteBuffer
 import java.util.Optional
+
+import influent.exception.InfluentIOException
+import influent.internal.nio.NioUdpChannel
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
@@ -34,10 +35,8 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
 
   "onWritable" should {
     "flush the response buffer" in {
-      val eventLoop = mock[NioEventLoop]
       val channel = mock[NioUdpChannel]
-
-      val server = new NioUdpHeartbeatServer(channel, eventLoop)
+      val server = new NioUdpHeartbeatServer(channel)
       val targets = Seq(
         new InetSocketAddress(8001),
         new InetSocketAddress(8002),
@@ -53,16 +52,14 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       targets.foreach { target =>
         verify(channel).send(response, target)
       }
-      verify(channel).disableOpWrite(eventLoop)
-      verifyNoMoreInteractions(eventLoop)
+      verify(channel).disableOpWrite()
+      verifyNoMoreInteractions(channel)
     }
 
     "not disable OP_WRITE" when {
       "all responses are not flushed" in {
-        val eventLoop = mock[NioEventLoop]
         val channel = mock[NioUdpChannel]
-
-        val server = new NioUdpHeartbeatServer(channel, eventLoop)
+        val server = new NioUdpHeartbeatServer(channel)
         val targets = Seq(
           new InetSocketAddress(8001),
           new InetSocketAddress(8002),
@@ -77,16 +74,13 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
         verify(channel).send(response, targets(0))
         verify(channel).send(response, targets(1))
         verifyNoMoreInteractions(channel)
-        verifyZeroInteractions(eventLoop)
       }
     }
 
     "not fail" when {
       "some IO error occurs" in {
-        val eventLoop = mock[NioEventLoop]
         val channel = mock[NioUdpChannel]
-
-        val server = new NioUdpHeartbeatServer(channel, eventLoop)
+        val server = new NioUdpHeartbeatServer(channel)
         val targets = Seq(
           new InetSocketAddress(8001),
           new InetSocketAddress(8002),
@@ -103,7 +97,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
         verify(channel).send(response, targets(0))
         verify(channel, times(2)).send(response, targets(1))
         verify(channel).send(response, targets(2))
-        verify(channel).disableOpWrite(eventLoop)
+        verify(channel).disableOpWrite()
         verifyNoMoreInteractions(channel)
       }
     }
@@ -111,10 +105,9 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
 
   "onReadable" should {
     "receives heartbeat requests" in {
-      val eventLoop = mock[NioEventLoop]
       val channel = mock[NioUdpChannel]
 
-      val server = new NioUdpHeartbeatServer(channel, eventLoop)
+      val server = new NioUdpHeartbeatServer(channel)
       val source1 = new InetSocketAddress(8001)
       val source2 = new InetSocketAddress(8002)
       when(channel.receive(ByteBuffer.allocate(1)))
@@ -126,16 +119,14 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       assert(server.replyTo.dequeue() === source1)
       assert(server.replyTo.dequeue() === source2)
       assert(!server.replyTo.nonEmpty())
-      verify(channel).enableOpWrite(eventLoop)
-      verifyNoMoreInteractions(eventLoop)
+      verify(channel).enableOpWrite()
+      verifyNoMoreInteractions(channel)
     }
 
     "not fail" when {
       "some IO error occurs" in {
-        val eventLoop = mock[NioEventLoop]
         val channel = mock[NioUdpChannel]
-
-        val server = new NioUdpHeartbeatServer(channel, eventLoop)
+        val server = new NioUdpHeartbeatServer(channel)
         val source: SocketAddress = new InetSocketAddress(8000)
         when(channel.receive(ByteBuffer.allocate(1)))
           .thenThrow(new InfluentIOException())
@@ -151,10 +142,8 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
 
   "close" should {
     "close the channel and inform the supervisor" in {
-      val eventLoop = mock[NioEventLoop]
       val channel = mock[NioUdpChannel]
-
-      val server = new NioUdpHeartbeatServer(channel, eventLoop)
+      val server = new NioUdpHeartbeatServer(channel)
       assert(server.close() === ())
       verify(channel).close()
     }
