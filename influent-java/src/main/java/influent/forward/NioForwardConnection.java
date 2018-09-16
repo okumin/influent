@@ -22,6 +22,7 @@ import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
+import influent.internal.nio.NioTcpPlaintextChannel;
 import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -114,7 +115,7 @@ final class NioForwardConnection implements NioAttachment {
       final NioTcpConfig tcpConfig,
       final ForwardSecurity security) {
     this(
-        NioTcpChannel.open(socketChannel, tcpConfig),
+        NioTcpPlaintextChannel.open(socketChannel, tcpConfig),
         eventLoop,
         callback,
         chunkSizeLimit,
