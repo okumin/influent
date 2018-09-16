@@ -19,9 +19,32 @@ package influent.internal.nio;
 import influent.exception.InfluentIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.util.EnumSet;
 
 /** A non-blocking {@code SocketChannel}. */
 public interface NioTcpChannel extends AutoCloseable {
+  enum Op {
+    /** OP_READ * */
+    READ(SelectionKey.OP_READ),
+    /** OP_WRITE * */
+    WRITE(SelectionKey.OP_WRITE);
+
+    private final int bit;
+
+    Op(final int bit) {
+      this.bit = bit;
+    }
+
+    int getBit() {
+      return bit;
+    }
+
+    static int bits(final EnumSet<Op> ops) {
+      return ops.stream().mapToInt(Op::getBit).reduce(0, (x, y) -> x | y);
+    }
+  }
+
   /**
    * Writes bytes to the socket buffer.
    *
@@ -41,23 +64,28 @@ public interface NioTcpChannel extends AutoCloseable {
   boolean read(final ByteBuffer dst);
 
   /**
-   * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
+   * Registers the this channel to the given {@code NioEventLoop}.
    *
-   * @param opReadEnabled whether OP_READ is enabled or not
-   * @param opWriteEnabled whether OP_WRITE is enabled or not
+   * <p>This method is thread-safe.
+   *
+   * @param ops the operations to be enabled
    * @param attachment the {@code NioAttachment}
    */
-  void register(
-      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment);
+  void register(final EnumSet<Op> ops, final NioAttachment attachment);
 
-  /** Enables OP_READ. Operations are done asynchronously. */
-  void enableOpRead();
+  /**
+   * Enables the given operation.
+   *
+   * <p>Operations are done asynchronously.
+   */
+  void enable(final Op op);
 
-  /** Enables OP_WRITE. Operations are done asynchronously. */
-  void enableOpWrite();
-
-  /** Disables OP_WRITE. Operations are done asynchronously. */
-  void disableOpWrite();
+  /**
+   * Disables the given operation.
+   *
+   * <p>Operations are done asynchronously.
+   */
+  void disable(final Op op);
 
   /** Closes the {@code SocketChannel}. */
   @Override

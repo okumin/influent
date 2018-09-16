@@ -21,6 +21,7 @@ import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
+import influent.internal.nio.NioTcpChannel.Op;
 import influent.internal.nio.NioTcpConfig;
 import influent.internal.nio.NioTcpPlaintextChannel;
 import influent.internal.util.ThreadSafeQueue;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.channels.SocketChannel;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.Supplier;
@@ -106,7 +108,7 @@ final class NioSslForwardConnection implements NioAttachment {
         engine,
         chunkSizeLimit);
 
-    channel.register(true, false, this);
+    channel.register(EnumSet.of(Op.READ), this);
   }
 
   /**
@@ -118,7 +120,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onWritable() {
     if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        channel.enableOpWrite();
+        channel.enable(Op.WRITE);
       }
       return;
     }
@@ -141,7 +143,7 @@ final class NioSslForwardConnection implements NioAttachment {
   public void onReadable() {
     if (!handshake()) {
       if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-        channel.enableOpWrite();
+        channel.enable(Op.WRITE);
       }
       return;
     }
@@ -200,7 +202,7 @@ final class NioSslForwardConnection implements NioAttachment {
       packer.packString(chunk);
       final ByteBuffer buffer = packer.toMessageBuffer().sliceAsByteBuffer();
       responses.enqueue(buffer);
-      channel.enableOpWrite();
+      channel.enable(Op.WRITE);
     } catch (final IOException e) {
       logger.error("Failed packing. chunk = " + chunk, e);
     }
@@ -265,7 +267,7 @@ final class NioSslForwardConnection implements NioAttachment {
         }
       }
       if (outboundNetworkBuffers.isEmpty()) {
-        channel.disableOpWrite();
+        channel.disable(Op.WRITE);
       }
       return outboundNetworkBuffers.isEmpty();
     } catch (final SSLException e) {
