@@ -20,8 +20,10 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{ClosedChannelException, SelectionKey, SocketChannel}
+import java.util
 
 import influent.exception.InfluentIOException
+import influent.internal.nio.NioTcpChannel.Op
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
@@ -121,40 +123,39 @@ class NioTcpPlaintextChannelSpec extends WordSpec with MockitoSugar {
 
       val attachment = mock[NioAttachment]
 
-      assert(channel.register(true, false, attachment) === ())
+      assert(channel.register(util.EnumSet.of(Op.READ), attachment) === ())
       verify(eventLoop).register(socketChannel, channel.key, SelectionKey.OP_READ, attachment)
 
-      assert(channel.register(false, true, attachment) === ())
+      assert(channel.register(util.EnumSet.of(Op.WRITE), attachment) === ())
       verify(eventLoop).register(socketChannel, channel.key, SelectionKey.OP_WRITE, attachment)
 
-      assert(channel.register(true, true, attachment) === ())
+      assert(channel.register(util.EnumSet.of(Op.READ, Op.WRITE), attachment) === ())
       verify(eventLoop).register(socketChannel, channel.key, SelectionKey.OP_READ | SelectionKey.OP_WRITE, attachment)
     }
   }
 
-  "enableOpRead" should {
-    "enable OP_READ" in {
+  "enable" should {
+    "enable the given operation" in {
       val eventLoop = mock[NioEventLoop]
       val channel = new NioTcpPlaintextChannel(mock[SocketChannel], eventLoop, remoteAddress)
-      assert(channel.enableOpRead() === ())
-      verify(eventLoop).enableInterestSet(channel.key, SelectionKey.OP_READ)
-    }
-  }
 
-  "enableOpWrite" should {
-    "enable OP_WRITE" in {
-      val eventLoop = mock[NioEventLoop]
-      val channel = new NioTcpPlaintextChannel(mock[SocketChannel], eventLoop, remoteAddress)
-      assert(channel.enableOpWrite() === ())
+      assert(channel.enable(Op.READ) === ())
+      verify(eventLoop).enableInterestSet(channel.key, SelectionKey.OP_READ)
+
+      assert(channel.enable(Op.WRITE) === ())
       verify(eventLoop).enableInterestSet(channel.key, SelectionKey.OP_WRITE)
     }
   }
 
-  "disableOpWrite" should {
-    "disable OP_WRITE" in {
+  "disable" should {
+    "enable the given operation" in {
       val eventLoop = mock[NioEventLoop]
       val channel = new NioTcpPlaintextChannel(mock[SocketChannel], eventLoop, remoteAddress)
-      assert(channel.disableOpWrite() === ())
+
+      assert(channel.disable(Op.READ) === ())
+      verify(eventLoop).disableInterestSet(channel.key, SelectionKey.OP_READ)
+
+      assert(channel.disable(Op.WRITE) === ())
       verify(eventLoop).disableInterestSet(channel.key, SelectionKey.OP_WRITE)
     }
   }

@@ -26,8 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.EnumSet;
 
 /** A non-blocking {@code SocketChannel}. */
 public final class NioTcpPlaintextChannel implements NioTcpChannel {
@@ -143,45 +143,25 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     }
   }
 
-  /**
-   * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
-   *
-   * @param opReadEnabled whether OP_READ is enabled or not
-   * @param opWriteEnabled whether OP_WRITE is enabled or not
-   * @param attachment the {@code NioAttachment}
-   */
+  /** {@inheritDoc} */
   @Override
-  public void register(
-      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment) {
-    int ops = 0;
-    if (opReadEnabled) {
-      ops |= SelectionKey.OP_READ;
-    }
-    if (opWriteEnabled) {
-      ops |= SelectionKey.OP_WRITE;
-    }
-    eventLoop.register(channel, key, ops, attachment);
+  public void register(final EnumSet<Op> ops, final NioAttachment attachment) {
+    eventLoop.register(channel, key, Op.bits(ops), attachment);
   }
 
-  /** Enables OP_READ. Operations are done asynchronously. */
+  /** {@inheritDoc} */
   @Override
-  public void enableOpRead() {
-    eventLoop.enableInterestSet(key, SelectionKey.OP_READ);
+  public void enable(final Op op) {
+    eventLoop.enableInterestSet(key, op.getBit());
   }
 
-  /** Enables OP_WRITE. Operations are done asynchronously. */
+  /** {@inheritDoc} */
   @Override
-  public void enableOpWrite() {
-    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+  public void disable(final Op op) {
+    eventLoop.disableInterestSet(key, op.getBit());
   }
 
-  /** Disables OP_WRITE. Operations are done asynchronously. */
-  @Override
-  public void disableOpWrite() {
-    eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
-  }
-
-  /** Closes the {@code SocketChannel}. */
+  /** {@inheritDoc} */
   @Override
   public void close() {
     closeChannel(channel, getRemoteAddress());
@@ -191,13 +171,13 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     Exceptions.ignore(channel::close, "Failed closing the socket channel." + remoteAddress);
   }
 
-  /** @return true if this channel is open */
+  /** {@inheritDoc} */
   @Override
   public boolean isOpen() {
     return Exceptions.orFalse(channel::isOpen);
   }
 
-  /** @return the remote address */
+  /** {@inheritDoc} */
   @Override
   public SocketAddress getRemoteAddress() {
     return remoteAddress;

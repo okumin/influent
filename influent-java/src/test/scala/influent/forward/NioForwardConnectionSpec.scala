@@ -27,6 +27,7 @@ import influent._
 import influent.exception.InfluentIOException
 import influent.internal.msgpack.MsgpackStreamUnpacker
 import influent.internal.nio.NioTcpChannel
+import influent.internal.nio.NioTcpChannel.Op
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.stubbing.Answer1
@@ -85,7 +86,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
         verify(channel).write(buffer)
       }
       assert(!connection.responses.nonEmpty())
-      verify(channel).disableOpWrite()
+      verify(channel).disable(Op.WRITE)
     }
 
     "not disable OP_WRITE" when {
@@ -189,7 +190,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       assert(connection.responses.dequeue() === response("chunk1"))
       assert(connection.responses.dequeue() === response("chunk3"))
       assert(!connection.responses.nonEmpty())
-      verify(channel, times(2)).enableOpWrite()
+      verify(channel, times(2)).enable(Op.WRITE)
       verify(channel, never()).close()
     }
 
@@ -325,7 +326,7 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       verify(callback).consume(request.getStream)
       assert(connection.responses.dequeue() === response("chunk1"))
       assert(!connection.responses.nonEmpty())
-      verify(channel).enableOpWrite()
+      verify(channel).enable(Op.WRITE)
     }
 
     "fail with InfluentIOException" when {
