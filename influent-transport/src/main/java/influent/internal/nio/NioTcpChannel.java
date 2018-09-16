@@ -77,6 +77,8 @@ public interface NioTcpChannel extends AutoCloseable {
    * Enables the given operation.
    *
    * <p>Operations are done asynchronously.
+   *
+   * @param op the operation to be enabled
    */
   void enable(final Op op);
 
@@ -84,6 +86,8 @@ public interface NioTcpChannel extends AutoCloseable {
    * Disables the given operation.
    *
    * <p>Operations are done asynchronously.
+   *
+   * @param op the operation to be disabled
    */
   void disable(final Op op);
 

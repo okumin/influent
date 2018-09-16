@@ -22,6 +22,7 @@ import java.util.Optional
 
 import influent.exception.InfluentIOException
 import influent.internal.nio.NioUdpChannel
+import influent.internal.nio.NioUdpChannel.Op
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
@@ -52,7 +53,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       targets.foreach { target =>
         verify(channel).send(response, target)
       }
-      verify(channel).disableOpWrite()
+      verify(channel).disable(Op.WRITE)
       verifyNoMoreInteractions(channel)
     }
 
@@ -66,12 +67,12 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
           new InetSocketAddress(8003)
         )
         targets.foreach(server.replyTo.enqueue)
-        when(channel.send(response, targets(0))).thenReturn(true)
+        when(channel.send(response, targets.head)).thenReturn(true)
         when(channel.send(response, targets(1))).thenReturn(false)
 
         assert(server.onWritable() === ())
 
-        verify(channel).send(response, targets(0))
+        verify(channel).send(response, targets.head)
         verify(channel).send(response, targets(1))
         verifyNoMoreInteractions(channel)
       }
@@ -87,17 +88,17 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
           new InetSocketAddress(8003)
         )
         targets.foreach(server.replyTo.enqueue)
-        when(channel.send(response, targets(0))).thenReturn(true)
+        when(channel.send(response, targets.head)).thenReturn(true)
         when(channel.send(response, targets(1)))
           .thenThrow(new InfluentIOException()).thenReturn(true)
         when(channel.send(response, targets(2))).thenReturn(true)
 
         assert(server.onWritable() === ())
 
-        verify(channel).send(response, targets(0))
+        verify(channel).send(response, targets.head)
         verify(channel, times(2)).send(response, targets(1))
         verify(channel).send(response, targets(2))
-        verify(channel).disableOpWrite()
+        verify(channel).disable(Op.WRITE)
         verifyNoMoreInteractions(channel)
       }
     }
@@ -119,7 +120,7 @@ class NioUdpHeartbeatServerSpec extends WordSpec with MockitoSugar {
       assert(server.replyTo.dequeue() === source1)
       assert(server.replyTo.dequeue() === source2)
       assert(!server.replyTo.nonEmpty())
-      verify(channel).enableOpWrite()
+      verify(channel).enable(Op.WRITE)
       verifyNoMoreInteractions(channel)
     }
 

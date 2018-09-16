@@ -28,12 +28,34 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.EnumSet;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A non-blocking {@code DatagramChannel}. */
 public final class NioUdpChannel implements AutoCloseable {
+  public enum Op {
+    /** OP_READ * */
+    READ(SelectionKey.OP_READ),
+    /** OP_WRITE * */
+    WRITE(SelectionKey.OP_WRITE);
+
+    private final int bit;
+
+    Op(final int bit) {
+      this.bit = bit;
+    }
+
+    int getBit() {
+      return bit;
+    }
+
+    static int bits(final EnumSet<Op> ops) {
+      return ops.stream().mapToInt(Op::getBit).reduce(0, (x, y) -> x | y);
+    }
+  }
+
   private static final Logger logger = LoggerFactory.getLogger(NioUdpChannel.class);
 
   private final DatagramChannel channel;
@@ -155,40 +177,37 @@ public final class NioUdpChannel implements AutoCloseable {
   }
 
   /**
-   * Registers the this channel to the given {@code NioEventLoop}. This method is thread-safe.
+   * Registers the this channel to the given {@code NioEventLoop}.
    *
-   * @param opReadEnabled whether OP_READ is enabled or not
-   * @param opWriteEnabled whether OP_WRITE is enabled or not
+   * <p>This method is thread-safe.
+   *
+   * @param ops the operations to be enabled
    * @param attachment the {@code NioAttachment}
    */
-  public void register(
-      final boolean opReadEnabled, final boolean opWriteEnabled, final NioAttachment attachment) {
-    int ops = 0;
-    if (opReadEnabled) {
-      ops |= SelectionKey.OP_READ;
-    }
-    if (opWriteEnabled) {
-      ops |= SelectionKey.OP_WRITE;
-    }
-    eventLoop.register(channel, key, ops, attachment);
+  public void register(final EnumSet<Op> ops, final NioAttachment attachment) {
+    eventLoop.register(channel, key, Op.bits(ops), attachment);
   }
 
   /**
-   * Enables OP_WRITE.
+   * Enables the given operation.
    *
    * <p>Operations are done asynchronously.
+   *
+   * @param op the operation to be enabled
    */
-  public void enableOpWrite() {
-    eventLoop.enableInterestSet(key, SelectionKey.OP_WRITE);
+  public void enable(final Op op) {
+    eventLoop.enableInterestSet(key, op.getBit());
   }
 
   /**
-   * Disables OP_WRITE.
+   * Disables the given operation.
    *
    * <p>Operations are done asynchronously.
+   *
+   * @param op the operation to be enabled
    */
-  public void disableOpWrite() {
-    eventLoop.disableInterestSet(key, SelectionKey.OP_WRITE);
+  public void disable(final Op op) {
+    eventLoop.disableInterestSet(key, op.getBit());
   }
 
   /** Closes the {@code DatagramChannel}. */

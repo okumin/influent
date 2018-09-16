@@ -20,15 +20,28 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{DatagramChannel, SelectionKey}
+import java.util
 import java.util.Optional
 
 import influent.exception.InfluentIOException
+import influent.internal.nio.NioUdpChannel.Op
 import org.mockito.Mockito._
 import org.scalatest.WordSpec
 import org.scalatest.mockito.MockitoSugar
 
 class NioUdpChannelSpec extends WordSpec with MockitoSugar {
   private[this] val localAddress = new InetSocketAddress("127.0.0.1", 24224)
+
+  "Op.bits" should {
+    "compute the union of the given operations" in {
+      assert(Op.bits(util.EnumSet.of(Op.READ)) === SelectionKey.OP_READ)
+      assert(Op.bits(util.EnumSet.of(Op.WRITE)) === SelectionKey.OP_WRITE)
+      assert(Op.bits(util.EnumSet.of(Op.READ, Op.WRITE)) ===
+        (SelectionKey.OP_READ | SelectionKey.OP_WRITE))
+      assert(Op.bits(util.EnumSet.of(Op.WRITE, Op.READ)) ===
+        (SelectionKey.OP_READ | SelectionKey.OP_WRITE))
+    }
+  }
 
   "send" should {
     "send and return true" in {
@@ -130,22 +143,27 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
 
       val attachment = mock[NioAttachment]
 
-      assert(channel.register(true, false, attachment) === ())
+      assert(channel.register(util.EnumSet.of(Op.READ), attachment) === ())
       verify(eventLoop).register(datagramChannel, channel.key, SelectionKey.OP_READ, attachment)
 
-      assert(channel.register(false, true, attachment) === ())
+      assert(channel.register(util.EnumSet.of(Op.WRITE), attachment) === ())
       verify(eventLoop).register(datagramChannel, channel.key, SelectionKey.OP_WRITE, attachment)
 
-      assert(channel.register(true, true, attachment) === ())
-      verify(eventLoop).register(datagramChannel, channel.key, SelectionKey.OP_READ | SelectionKey.OP_WRITE, attachment)
+      assert(channel.register(util.EnumSet.of(Op.READ, Op.WRITE), attachment) === ())
+      verify(eventLoop).register(
+        datagramChannel, channel.key, SelectionKey.OP_READ | SelectionKey.OP_WRITE, attachment)
     }
   }
 
-  "enableOpWrite" should {
-    "enable OP_WRITE" in {
+  "enable" should {
+    "enable the given operations" in {
       val eventLoop = mock[NioEventLoop]
       val channel = new NioUdpChannel(mock[DatagramChannel], eventLoop, localAddress)
-      assert(channel.enableOpWrite() === ())
+
+      assert(channel.enable(Op.READ) === ())
+      verify(eventLoop).enableInterestSet(channel.key, SelectionKey.OP_READ)
+
+      assert(channel.enable(Op.WRITE) === ())
       verify(eventLoop).enableInterestSet(channel.key, SelectionKey.OP_WRITE)
     }
   }
@@ -154,7 +172,11 @@ class NioUdpChannelSpec extends WordSpec with MockitoSugar {
     "disable OP_WRITE" in {
       val eventLoop = mock[NioEventLoop]
       val channel = new NioUdpChannel(mock[DatagramChannel], eventLoop, localAddress)
-      assert(channel.disableOpWrite() === ())
+
+      assert(channel.disable(Op.READ) === ())
+      verify(eventLoop).disableInterestSet(channel.key, SelectionKey.OP_READ)
+
+      assert(channel.disable(Op.WRITE) === ())
       verify(eventLoop).disableInterestSet(channel.key, SelectionKey.OP_WRITE)
     }
   }
