@@ -19,9 +19,11 @@ package influent.forward;
 import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioUdpChannel;
+import influent.internal.nio.NioUdpChannel.Op;
 import influent.internal.util.ThreadSafeQueue;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.EnumSet;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,14 +58,14 @@ final class NioUdpHeartbeatServer implements NioAttachment {
    */
   NioUdpHeartbeatServer(final SocketAddress localAddress, final NioEventLoop eventLoop) {
     this(NioUdpChannel.open(eventLoop, localAddress, SOCKET_BUFFER_SIZE, SOCKET_BUFFER_SIZE));
-    channel.register(true, false, this);
+    channel.register(EnumSet.of(Op.READ), this);
   }
 
   /** Sends heartbeat responses. {@code NioUdpHeartbeatServer#onWritable} never fails. */
   @Override
   public void onWritable() {
     if (sendResponses()) {
-      channel.disableOpWrite();
+      channel.disable(Op.WRITE);
     }
   }
 
@@ -103,7 +105,7 @@ final class NioUdpHeartbeatServer implements NioAttachment {
       }
     }
 
-    channel.enableOpWrite();
+    channel.enable(Op.WRITE);
   }
 
   /** {@inheritDoc} */
