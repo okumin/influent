@@ -22,6 +22,7 @@ import influent.internal.nio.NioAttachment;
 import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpConfig;
+import influent.internal.nio.NioTcpPlaintextChannel;
 import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -104,7 +105,12 @@ final class NioSslForwardConnection implements NioAttachment {
       final SSLEngine engine,
       final long chunkSizeLimit,
       final NioTcpConfig tcpConfig) {
-    this(NioTcpChannel.open(socketChannel, tcpConfig), eventLoop, callback, engine, chunkSizeLimit);
+    this(
+        NioTcpPlaintextChannel.open(socketChannel, tcpConfig),
+        eventLoop,
+        callback,
+        engine,
+        chunkSizeLimit);
 
     channel.register(eventLoop, true, false, this);
   }
