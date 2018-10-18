@@ -27,7 +27,7 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-import java.util.EnumSet;
+import java.util.Set;
 
 /** A non-blocking {@code SocketChannel}. */
 public final class NioTcpPlaintextChannel implements NioTcpChannel {
@@ -133,7 +133,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
 
   /** {@inheritDoc} */
   @Override
-  public void register(final EnumSet<Op> ops, final NioAttachment attachment) {
+  public void register(final Set<Op> ops, final NioAttachment attachment) {
     eventLoop.register(channel, key, Op.bits(ops), attachment);
   }
 

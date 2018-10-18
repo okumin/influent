@@ -20,7 +20,7 @@ import influent.exception.InfluentIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * A non-blocking {@code SocketChannel}.
@@ -29,9 +29,9 @@ import java.util.EnumSet;
  */
 public interface NioTcpChannel extends AutoCloseable {
   enum Op {
-    /** OP_READ * */
+    /** OP_READ */
     READ(SelectionKey.OP_READ),
-    /** OP_WRITE * */
+    /** OP_WRITE */
     WRITE(SelectionKey.OP_WRITE);
 
     private final int bit;
@@ -44,7 +44,7 @@ public interface NioTcpChannel extends AutoCloseable {
       return bit;
     }
 
-    static int bits(final EnumSet<Op> ops) {
+    static int bits(final Set<Op> ops) {
       return ops.stream().mapToInt(Op::getBit).reduce(0, (x, y) -> x | y);
     }
   }
@@ -79,7 +79,7 @@ public interface NioTcpChannel extends AutoCloseable {
    * @param ops the operations to be enabled
    * @param attachment the {@code NioAttachment}
    */
-  void register(final EnumSet<Op> ops, final NioAttachment attachment);
+  void register(final Set<Op> ops, final NioAttachment attachment);
 
   /**
    * Enables the given operation.
