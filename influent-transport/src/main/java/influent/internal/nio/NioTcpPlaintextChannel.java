@@ -93,13 +93,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     }
   }
 
-  /**
-   * Writes bytes to the socket buffer.
-   *
-   * @param src the buffer
-   * @return true when some bytes are written
-   * @throws InfluentIOException if some IO error occurs
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean write(final ByteBuffer src) {
     try {
@@ -115,13 +109,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     }
   }
 
-  /**
-   * Reads bytes from the socket buffer.
-   *
-   * @param dst the buffer
-   * @return true when some bytes are read
-   * @throws InfluentIOException if some IO error occurs
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean read(final ByteBuffer dst) {
     try {
