@@ -1,0 +1,12 @@
+version: '3'
+services:
+  influent-server:
+    build:
+      context: ../..
+      dockerfile: example/Dockerfile
+    environment:
+      DURATION_SECONDS: '60'
+  fluentd-agent:
+    image: fluent/fluentd
+    volumes:
+      - ./fluent.conf:/fluentd/etc/fluent.conf

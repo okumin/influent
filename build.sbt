@@ -23,15 +23,15 @@ lazy val influentTransport = (project in file("influent-transport"))
   )
   .enablePlugins(AutomateHeaderPlugin)
 
-lazy val influentJavaSample = (project in file("influent-java-sample"))
+lazy val influentJavaExample = (project in file("influent-java-example"))
   .settings(commonSettings: _*)
   .settings(javaSettings: _*)
   .settings(
-    name := "influent-java-sample",
+    name := "influent-java-example",
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ),
-    assemblyJarName in assembly := "influent-java-sample.jar"
+    assemblyJarName in assembly := "influent-java-example.jar"
   ).dependsOn(influentJava)
   .enablePlugins(AutomateHeaderPlugin)
 

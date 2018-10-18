@@ -1,0 +1,7 @@
+*
+!influent-java/src
+!influent-java-example/src
+!influent-transport/src
+!project/build.properties
+!project/plugins.sbt
+!build.sbt

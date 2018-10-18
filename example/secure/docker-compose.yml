@@ -1,0 +1,17 @@
+version: '3'
+services:
+  influent-server:
+    build:
+      context: ../..
+      dockerfile: example/Dockerfile
+    environment:
+      DURATION_SECONDS: '60'
+      TLS_ENABLED: 'true'
+      HANDSHAKE_ENABLED: 'false'
+    volumes:
+      - ../influent-server.jks:/influent/influent-server.jks
+  fluentd-agent:
+    image: fluent/fluentd
+    volumes:
+      - ./fluent.conf:/fluentd/etc/fluent.conf
+      - ../ca_cert.pem:/fluentd/ca_cert.pem
