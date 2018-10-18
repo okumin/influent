@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package sample;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package example;
 
 import influent.forward.ForwardCallback;
 import influent.forward.ForwardServer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Counter {
   private static final class Reporter implements Runnable {
