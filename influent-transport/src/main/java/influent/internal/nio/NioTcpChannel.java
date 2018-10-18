@@ -22,7 +22,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.EnumSet;
 
-/** A non-blocking {@code SocketChannel}. */
+/**
+ * A non-blocking {@code SocketChannel}.
+ *
+ * <p>Some operations of NioTcpChannel are not thread-safe.
+ */
 public interface NioTcpChannel extends AutoCloseable {
   enum Op {
     /** OP_READ * */
@@ -48,6 +52,8 @@ public interface NioTcpChannel extends AutoCloseable {
   /**
    * Writes bytes to the socket buffer.
    *
+   * <p>This method is not guaranteed to be thread-safe.
+   *
    * @param src the buffer
    * @return true when some bytes are written
    * @throws InfluentIOException if some IO error occurs
@@ -56,6 +62,8 @@ public interface NioTcpChannel extends AutoCloseable {
 
   /**
    * Reads bytes from the socket buffer.
+   *
+   * <p>This method is not guaranteed to be thread-safe.
    *
    * @param dst the buffer
    * @return true when some bytes are read
@@ -76,7 +84,7 @@ public interface NioTcpChannel extends AutoCloseable {
   /**
    * Enables the given operation.
    *
-   * <p>Operations are done asynchronously.
+   * <p>This method is thread-safe and operations are done asynchronously.
    *
    * @param op the operation to be enabled
    */
@@ -85,19 +93,31 @@ public interface NioTcpChannel extends AutoCloseable {
   /**
    * Disables the given operation.
    *
-   * <p>Operations are done asynchronously.
+   * <p>This method is thread-safe and operations are done asynchronously.
    *
    * @param op the operation to be disabled
    */
   void disable(final Op op);
 
-  /** Closes the {@code SocketChannel}. */
+  /**
+   * Closes the {@code SocketChannel}.
+   *
+   * <p>This method is not guaranteed to be thread-safe.
+   */
   @Override
   void close();
 
-  /** @return true if this channel is open */
+  /**
+   * Returns true if this channel is open
+   *
+   * <p>This method is not guaranteed to be thread-safe.
+   */
   boolean isOpen();
 
-  /** @return the remote address */
+  /**
+   * Returns the remote address
+   *
+   * <p>This method is thread-safe.
+   */
   SocketAddress getRemoteAddress();
 }
