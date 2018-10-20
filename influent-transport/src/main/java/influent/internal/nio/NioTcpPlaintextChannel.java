@@ -28,9 +28,13 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** A non-blocking {@code SocketChannel}. */
 public final class NioTcpPlaintextChannel implements NioTcpChannel {
+  private static final Logger logger = LoggerFactory.getLogger(NioTcpPlaintextChannel.class);
+
   private final SocketChannel channel;
   private final NioEventLoop eventLoop;
   private final SocketAddress remoteAddress;
@@ -152,6 +156,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
   /** {@inheritDoc} */
   @Override
   public void close() {
+    logger.debug("Closes the channel with {}.", remoteAddress);
     closeChannel(channel, getRemoteAddress());
   }
 

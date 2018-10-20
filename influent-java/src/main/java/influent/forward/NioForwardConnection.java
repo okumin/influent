@@ -19,16 +19,12 @@ package influent.forward;
 import influent.exception.InfluentIOException;
 import influent.internal.msgpack.MsgpackStreamUnpacker;
 import influent.internal.nio.NioAttachment;
-import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioTcpChannel;
 import influent.internal.nio.NioTcpChannel.Op;
-import influent.internal.nio.NioTcpConfig;
-import influent.internal.nio.NioTcpPlaintextChannel;
 import influent.internal.util.ThreadSafeQueue;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -81,6 +77,14 @@ final class NioForwardConnection implements NioAttachment {
     state = ConnectionState.ESTABLISHED;
   }
 
+  /**
+   * Constructs a new {@code NioForwardConnection}.
+   *
+   * @param channel the inbound channel
+   * @param callback the callback to handle requests
+   * @param chunkSizeLimit the allowable size of a chunk
+   * @throws InfluentIOException if some IO error occurs
+   */
   NioForwardConnection(
       final NioTcpChannel channel,
       final ForwardCallback callback,
@@ -91,30 +95,6 @@ final class NioForwardConnection implements NioAttachment {
         callback,
         new MsgpackStreamUnpacker(chunkSizeLimit),
         new MsgpackForwardRequestDecoder(),
-        security);
-  }
-
-  /**
-   * Constructs a new {@code NioForwardConnection}.
-   *
-   * @param socketChannel the inbound channel
-   * @param eventLoop the {@code NioEventLoop} to which this {@code NioForwardConnection} belongs
-   * @param callback the callback to handle requests
-   * @param chunkSizeLimit the allowable size of a chunk
-   * @param tcpConfig the {@code NioTcpConfig}
-   * @throws InfluentIOException if some IO error occurs
-   */
-  NioForwardConnection(
-      final SocketChannel socketChannel,
-      final NioEventLoop eventLoop,
-      final ForwardCallback callback,
-      final long chunkSizeLimit,
-      final NioTcpConfig tcpConfig,
-      final ForwardSecurity security) {
-    this(
-        NioTcpPlaintextChannel.open(socketChannel, eventLoop, tcpConfig),
-        callback,
-        chunkSizeLimit,
         security);
 
     if (this.security.isEnabled()) {
@@ -159,6 +139,10 @@ final class NioForwardConnection implements NioAttachment {
 
   private boolean sendResponses() {
     // TODO: gathering
+    if (responses.isEmpty()) {
+      // flush
+      channel.write(ByteBuffer.allocate(0));
+    }
     while (responses.nonEmpty()) {
       final ByteBuffer head = responses.peek();
       channel.write(head);

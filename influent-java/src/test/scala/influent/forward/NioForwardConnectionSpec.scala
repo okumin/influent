@@ -60,7 +60,13 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
 
   "onWritable" should {
     def createConnection(channel: NioTcpChannel): NioForwardConnection = {
-      new NioForwardConnection(channel, mock[ForwardCallback], Int.MaxValue, mock[ForwardSecurity])
+      new NioForwardConnection(
+        channel,
+        mock[ForwardCallback],
+        mock[MsgpackStreamUnpacker],
+        mock[MsgpackForwardRequestDecoder],
+        mock[ForwardSecurity]
+      )
     }
 
     "send responses" in {
@@ -352,7 +358,11 @@ class NioForwardConnectionSpec extends WordSpec with MockitoSugar {
       val channel = mock[NioTcpChannel]
       val security = mock[ForwardSecurity]
       val connection = new NioForwardConnection(
-        channel, mock[ForwardCallback], Int.MaxValue, security
+        channel,
+        mock[ForwardCallback],
+        mock[MsgpackStreamUnpacker],
+        mock[MsgpackForwardRequestDecoder],
+        security
       )
       assert(connection.close() === ())
       verify(channel).close()

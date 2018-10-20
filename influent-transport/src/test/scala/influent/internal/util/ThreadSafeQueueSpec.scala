@@ -24,16 +24,19 @@ class ThreadSafeQueueSpec extends WordSpec with GeneratorDrivenPropertyChecks {
     "behave like a FIFO queue" in {
       forAll { messages: Seq[Int] =>
         val queue = new ThreadSafeQueue[Int]()
+        assert(queue.isEmpty)
         assert(!queue.nonEmpty())
         assert(queue.dequeue() === null)
 
         messages.foreach { m =>
           queue.enqueue(m)
+          assert(!queue.isEmpty)
           assert(queue.nonEmpty())
         }
 
         whenever(messages.nonEmpty) {
           assert(queue.peek() === messages.head)
+          assert(!queue.isEmpty)
           assert(queue.nonEmpty())
         }
 
@@ -42,6 +45,7 @@ class ThreadSafeQueueSpec extends WordSpec with GeneratorDrivenPropertyChecks {
         }
         assert(elements === messages)
 
+        assert(queue.isEmpty)
         assert(!queue.nonEmpty())
         assert(queue.dequeue() === null)
       }
