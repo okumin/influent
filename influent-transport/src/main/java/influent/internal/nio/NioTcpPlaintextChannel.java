@@ -27,10 +27,14 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SocketChannel;
-import java.util.EnumSet;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** A non-blocking {@code SocketChannel}. */
 public final class NioTcpPlaintextChannel implements NioTcpChannel {
+  private static final Logger logger = LoggerFactory.getLogger(NioTcpPlaintextChannel.class);
+
   private final SocketChannel channel;
   private final NioEventLoop eventLoop;
   private final SocketAddress remoteAddress;
@@ -93,13 +97,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     }
   }
 
-  /**
-   * Writes bytes to the socket buffer.
-   *
-   * @param src the buffer
-   * @return true when some bytes are written
-   * @throws InfluentIOException if some IO error occurs
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean write(final ByteBuffer src) {
     try {
@@ -115,13 +113,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
     }
   }
 
-  /**
-   * Reads bytes from the socket buffer.
-   *
-   * @param dst the buffer
-   * @return true when some bytes are read
-   * @throws InfluentIOException if some IO error occurs
-   */
+  /** {@inheritDoc} */
   @Override
   public boolean read(final ByteBuffer dst) {
     try {
@@ -145,7 +137,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
 
   /** {@inheritDoc} */
   @Override
-  public void register(final EnumSet<Op> ops, final NioAttachment attachment) {
+  public void register(final Set<Op> ops, final NioAttachment attachment) {
     eventLoop.register(channel, key, Op.bits(ops), attachment);
   }
 
@@ -164,6 +156,7 @@ public final class NioTcpPlaintextChannel implements NioTcpChannel {
   /** {@inheritDoc} */
   @Override
   public void close() {
+    logger.debug("Closes the channel with {}.", remoteAddress);
     closeChannel(channel, getRemoteAddress());
   }
 

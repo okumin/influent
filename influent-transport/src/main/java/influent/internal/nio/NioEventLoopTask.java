@@ -105,7 +105,9 @@ interface NioEventLoopTask {
         if (updated != current) {
           underlying.interestOps(updated);
         }
-      } catch (final CancelledKeyException | IllegalArgumentException e) {
+      } catch (final CancelledKeyException e) {
+        logger.debug("The key for UpdateInterestSet is cancelled.");
+      } catch (final IllegalArgumentException e) {
         logger.error("UpdateInterestSet threw an exception.", e);
       }
     }
@@ -141,11 +143,11 @@ interface NioEventLoopTask {
         logger.debug("Selected key for {}", attachment);
 
         try {
-          if (key.isWritable()) {
-            attachment.onWritable();
-          }
           if (key.isReadable()) {
             attachment.onReadable();
+          }
+          if (key.isWritable()) {
+            attachment.onWritable();
           }
           if (key.isAcceptable()) {
             attachment.onAcceptable();

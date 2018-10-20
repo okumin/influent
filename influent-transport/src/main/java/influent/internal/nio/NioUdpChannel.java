@@ -28,17 +28,17 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A non-blocking {@code DatagramChannel}. */
 public final class NioUdpChannel implements AutoCloseable {
   public enum Op {
-    /** OP_READ * */
+    /** OP_READ */
     READ(SelectionKey.OP_READ),
-    /** OP_WRITE * */
+    /** OP_WRITE */
     WRITE(SelectionKey.OP_WRITE);
 
     private final int bit;
@@ -51,7 +51,7 @@ public final class NioUdpChannel implements AutoCloseable {
       return bit;
     }
 
-    static int bits(final EnumSet<Op> ops) {
+    static int bits(final Set<Op> ops) {
       return ops.stream().mapToInt(Op::getBit).reduce(0, (x, y) -> x | y);
     }
   }
@@ -184,7 +184,7 @@ public final class NioUdpChannel implements AutoCloseable {
    * @param ops the operations to be enabled
    * @param attachment the {@code NioAttachment}
    */
-  public void register(final EnumSet<Op> ops, final NioAttachment attachment) {
+  public void register(final Set<Op> ops, final NioAttachment attachment) {
     eventLoop.register(channel, key, Op.bits(ops), attachment);
   }
 

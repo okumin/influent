@@ -20,14 +20,18 @@ import influent.exception.InfluentIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.EnumSet;
+import java.util.Set;
 
-/** A non-blocking {@code SocketChannel}. */
+/**
+ * A non-blocking {@code SocketChannel}.
+ *
+ * <p>Some operations of NioTcpChannel are not thread-safe.
+ */
 public interface NioTcpChannel extends AutoCloseable {
   enum Op {
-    /** OP_READ * */
+    /** OP_READ */
     READ(SelectionKey.OP_READ),
-    /** OP_WRITE * */
+    /** OP_WRITE */
     WRITE(SelectionKey.OP_WRITE);
 
     private final int bit;
@@ -40,13 +44,15 @@ public interface NioTcpChannel extends AutoCloseable {
       return bit;
     }
 
-    static int bits(final EnumSet<Op> ops) {
+    static int bits(final Set<Op> ops) {
       return ops.stream().mapToInt(Op::getBit).reduce(0, (x, y) -> x | y);
     }
   }
 
   /**
    * Writes bytes to the socket buffer.
+   *
+   * <p>This method is not guaranteed to be thread-safe.
    *
    * @param src the buffer
    * @return true when some bytes are written
@@ -56,6 +62,8 @@ public interface NioTcpChannel extends AutoCloseable {
 
   /**
    * Reads bytes from the socket buffer.
+   *
+   * <p>This method is not guaranteed to be thread-safe.
    *
    * @param dst the buffer
    * @return true when some bytes are read
@@ -71,12 +79,12 @@ public interface NioTcpChannel extends AutoCloseable {
    * @param ops the operations to be enabled
    * @param attachment the {@code NioAttachment}
    */
-  void register(final EnumSet<Op> ops, final NioAttachment attachment);
+  void register(final Set<Op> ops, final NioAttachment attachment);
 
   /**
    * Enables the given operation.
    *
-   * <p>Operations are done asynchronously.
+   * <p>This method is thread-safe and operations are done asynchronously.
    *
    * @param op the operation to be enabled
    */
@@ -85,19 +93,31 @@ public interface NioTcpChannel extends AutoCloseable {
   /**
    * Disables the given operation.
    *
-   * <p>Operations are done asynchronously.
+   * <p>This method is thread-safe and operations are done asynchronously.
    *
    * @param op the operation to be disabled
    */
   void disable(final Op op);
 
-  /** Closes the {@code SocketChannel}. */
+  /**
+   * Closes the {@code SocketChannel}.
+   *
+   * <p>This method is not guaranteed to be thread-safe.
+   */
   @Override
   void close();
 
-  /** @return true if this channel is open */
+  /**
+   * Returns true if this channel is open
+   *
+   * <p>This method is not guaranteed to be thread-safe.
+   */
   boolean isOpen();
 
-  /** @return the remote address */
+  /**
+   * Returns the remote address
+   *
+   * <p>This method is thread-safe.
+   */
   SocketAddress getRemoteAddress();
 }

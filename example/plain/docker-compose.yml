@@ -6,6 +6,7 @@ services:
       dockerfile: example/Dockerfile
     environment:
       DURATION_SECONDS: '60'
+      INFLUENT_LOG_LEVEL: INFO
   fluentd-agent:
     image: fluent/fluentd
     volumes:

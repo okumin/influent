@@ -21,6 +21,9 @@ import influent.internal.nio.NioEventLoop;
 import influent.internal.nio.NioEventLoopPool;
 import influent.internal.nio.NioTcpAcceptor;
 import influent.internal.nio.NioTcpConfig;
+import influent.internal.nio.NioTcpPlaintextChannel;
+import influent.internal.nio.NioTcpTlsChannel;
+import influent.internal.nio.NioTlsEngine;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
@@ -59,22 +62,22 @@ final class NioForwardServer implements ForwardServer {
     if (channelConfig.isSslEnabled()) {
       channelFactory =
           (socketChannel) ->
-              new NioSslForwardConnection(
-                  socketChannel,
-                  workerEventLoopPool.next(),
+              new NioForwardConnection(
+                  NioTcpTlsChannel.open(
+                      socketChannel,
+                      workerEventLoopPool.next(),
+                      tcpConfig,
+                      NioTlsEngine.createServerEngine(channelConfig.createSSLEngine())),
                   callback,
-                  channelConfig.createSSLEngine(),
                   chunkSizeLimit,
-                  tcpConfig);
+                  security);
     } else {
       channelFactory =
           (socketChannel) ->
               new NioForwardConnection(
-                  socketChannel,
-                  workerEventLoopPool.next(),
+                  NioTcpPlaintextChannel.open(socketChannel, workerEventLoopPool.next(), tcpConfig),
                   callback,
                   chunkSizeLimit,
-                  tcpConfig,
                   security);
     }
     NioTcpAcceptor.open(localAddress, bossEventLoop, channelFactory, tcpConfig);

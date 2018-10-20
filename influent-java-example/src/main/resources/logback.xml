@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="${INFLUENT_LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

@@ -66,6 +66,15 @@ public final class ThreadSafeQueue<E> {
   }
 
   /**
+   * Tests that this {@code ThreadSafeQueue} is empty.
+   *
+   * @return true if this {@code ThreadSafeQueue} is empty
+   */
+  public boolean isEmpty() {
+    return queue.isEmpty();
+  }
+
+  /**
    * Tests that this {@code ThreadSafeQueue} is non-empty.
    *
    * @return true if this {@code ThreadSafeQueue} is non-empty
