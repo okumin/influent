@@ -44,7 +44,7 @@ lazy val commonSettings = Seq(
   javacOptions in (Compile, compile) ++= Seq("-encoding", "UTF-8"),
   libraryDependencies ++= Seq(
     "org.slf4j" % "slf4j-api" % "1.7.25",
-    "org.mockito" % "mockito-core" % "2.21.0" % "test",
+    "org.mockito" % "mockito-core" % "2.28.2" % "test",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
     "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
   ),

@@ -1,10 +1,12 @@
 language: scala
 
+dist: xenial
+
 script:
   - sbt -J-Xmx3784m test
 
 jdk:
-  - oraclejdk8
-  - oraclejdk9
+  - openjdk8
+  - openjdk11
 
 sudo: true
